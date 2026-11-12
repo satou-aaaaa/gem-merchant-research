@@ -1,0 +1,5 @@
+finished: 2026-11-12T08:10Z
+exit_code: 0
+commit: 74b032c8d78e6760e528907c16d11a0c343f0d7b
+run: https://github.com/satou-aaaaa/gem-merchant-research/actions/runs/43180812032
+command: python -c "import gem_merchant; print('ok')" && echo ok > "$RESEARCH_OUT/ok.txt"
