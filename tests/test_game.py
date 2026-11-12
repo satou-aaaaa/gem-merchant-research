@@ -145,5 +145,12 @@ def test_random_games_keep_invariants(seed):
         )
         cards += sum(len(p.reserved) + p.bought for p in s.players)
         assert cards == 90
-        assert s.turn < 1000
+        assert s.turn <= game.MAX_TURNS
     assert game.result(s) in (-1, 0, 1)
+
+
+def test_stalled_game_is_cut_off():
+    s = game.new_game(1)
+    s.turn = game.MAX_TURNS - 1
+    game.apply(s, Action(TAKE3, (0, 1, 2)))
+    assert s.done
