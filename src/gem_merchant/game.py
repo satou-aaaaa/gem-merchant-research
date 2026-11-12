@@ -9,6 +9,7 @@
 - 貴族は手番の終わりに、条件を満たしていれば必ず1枚来る（断れない、公式 FAQ）。2枚以上なら手の一部として選ぶ。
 - 指せる手が無いときはパス。全員が続けてパスしたら、そこで終わる（ルールに無いので決めた）。
 - 15点以上の人が出たら、その一巡（後手の手番）まで指して終わる。
+- 誰も買えずにチップを取って戻すだけになると終わらないので、MAX_TURNS 手番で打ち切り、その時の点で勝ち負けを決める（ルールに無いので決めた）。
 """
 
 from __future__ import annotations
@@ -27,6 +28,7 @@ N_PLAYERS = 2
 
 TAKE3, TAKE2, RESERVE, BUY, PASS = "take3", "take2", "reserve", "buy", "pass"
 NO_RET = (0, 0, 0, 0, 0, 0)
+MAX_TURNS = 200  # 打ち切りの手番の数（ふつうの対局は30〜70手番で終わる）
 
 
 class Action(NamedTuple):
@@ -62,6 +64,21 @@ class State:
     @property
     def current(self) -> int:
         return self.turn % N_PLAYERS
+
+    def clone(self) -> State:
+        return State(
+            self.bank[:],
+            {k: v[:] for k, v in self.decks.items()},
+            {k: v[:] for k, v in self.board.items()},
+            self.nobles[:],
+            [
+                Player(p.tokens[:], p.bonus[:], p.points, p.reserved[:], p.bought, p.nobles[:])
+                for p in self.players
+            ],
+            self.turn,
+            self.passes,
+            self.done,
+        )
 
 
 def new_game(seed: int) -> State:
@@ -231,6 +248,7 @@ def apply(state: State, a: Action) -> None:
     state.turn += 1
     if (
         state.passes >= N_PLAYERS
+        or state.turn >= MAX_TURNS
         or last_in_round
         and any(q.points >= rules.WIN_POINTS for q in state.players)
     ):

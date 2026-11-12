@@ -5,7 +5,7 @@
 姉妹プロジェクト: [carcassonne-research](https://github.com/satou-aaaaa/carcassonne-research)（仕組みの多くをここから写す）。
 
 - 調べたこと: [docs/RESEARCH.md](docs/RESEARCH.md)
-- 進め方: [docs/ROADMAP.md](docs/ROADMAP.md)（段階1「土台」と段階2「ルールエンジン」まで済み）
+- 進め方: [docs/ROADMAP.md](docs/ROADMAP.md)（段階1・2が済み、段階3は AI まで。実験は [docs/EXPERIMENTS.md](docs/EXPERIMENTS.md)）
 
 ## 準備
 
@@ -13,4 +13,5 @@
 bash scripts/setup.sh                 # .venv を作って requirements.txt を入れる（何度実行してもよい。Windows は Git Bash で）
 .venv/bin/python scripts/check.py --quick   # ruff・整形・テスト（Windows は .venv\Scripts\python）
 .venv/bin/python scripts/play_random.py      # ランダムな手どうしの対局で、終わり方・手数・手の候補の数を見る
+.venv/bin/python scripts/run_match.py mcts400 greedy --pairs 20   # 2つの AI を先後入れ替えで対戦させる
 ```
