@@ -1,0 +1,17 @@
+[project]
+name = "gem-merchant-research"
+version = "0.1.0"
+description = "Gem engine-building card game (2 players) AI research"
+requires-python = ">=3.11"
+dependencies = ["numpy", "numba"]
+
+[project.optional-dependencies]
+dev = ["pytest", "ruff"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+markers = ["slow: 時間のかかる強さの検証（scripts/check.py --quick では飛ばす）"]
+
+[tool.ruff]
+line-length = 100
