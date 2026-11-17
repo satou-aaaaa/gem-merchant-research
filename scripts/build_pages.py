@@ -4,7 +4,7 @@
     py scripts/build_pages.py --check   # docs/ が web/ と同じかだけを見る（違えば終了コード 1。check.py が使う）
 
 ページを直すときは web/ の方を直してから、これで docs/ を作り直す（docs/*.html を直に直さない）。
-集計から組み立てるページ（stats.html）は web/<名前>_template.html の {{名前}} を埋めて作る。
+集計から組み立てるページ（stats.html・tips.html）は web/<名前>_template.html の {{名前}} を埋めて作る。
 """
 
 from __future__ import annotations
@@ -38,6 +38,8 @@ def built() -> dict[str, str]:
     stats = json.loads((ROOT / "data" / "stats.json").read_text(encoding="utf-8"))
     tpl = (WEB / "stats_template.html").read_text(encoding="utf-8")
     out["stats.html"] = fill(tpl, stats_page.render(stats))
+    tpl = (WEB / "tips_template.html").read_text(encoding="utf-8")
+    out["tips.html"] = fill(tpl, stats_page.tips(stats))
     return out
 
 
