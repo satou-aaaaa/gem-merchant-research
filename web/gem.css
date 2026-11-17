@@ -36,7 +36,7 @@
 .card .cost span { display:inline-flex; align-items:center; gap:4px; font-size:12px; }
 .card .cost .gem { width:17px; height:17px; font-size:11px; }
 .card.can { box-shadow:0 0 0 2px var(--accent) inset; }
-.card.can::after { content:"買える"; position:absolute; right:4px; bottom:3px; font-size:11px; color:var(--accent); font-weight:700; }
+.card .canmark { position:absolute; right:4px; bottom:3px; font-size:11px; color:var(--accent); font-weight:700; }
 .card.can .cost { padding-bottom:16px; }
 .card.empty { visibility:hidden; }
 .blindmark { position:absolute; left:4px; bottom:3px; font-size:11px; color:var(--muted); }

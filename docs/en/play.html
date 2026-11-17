@@ -1,0 +1,805 @@
+<!doctype html>
+<html lang="en" data-base="../">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gem Merchant's Workshop: Human vs AI</title>
+<meta name="description" content="Play a 2-player gem card game against an AI in your browser: collect gems and buy cards. Hints show what the AI is thinking.">
+<style>
+  :root { --bg:#f4f1ea; --panel:#fff; --ink:#2b2b2b; --muted:#6f6a60; --line:#ddd6c7; --accent:#2e7d32; --me:#c0392b; --ai:#2f6fd6; --hint:#8e44ad;
+    --g0:#f7f5ef; --g1:#2f6fd6; --g2:#2e9e4f; --g3:#d64541; --g4:#3a3a3a; --g5:#e0b030; --t0:#333; --t1:#fff; --t2:#fff; --t3:#fff; --t4:#fff; --t5:#3a2a00; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#1d1f1c; --panel:#2a2d29; --ink:#e8e6df; --muted:#a6a59b; --line:#454840; --accent:#6fbf73; --hint:#c08ad8; --g4:#111; }
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; font:14px/1.5 system-ui, "Hiragino Sans", "Yu Gothic UI", sans-serif; background:var(--bg); color:var(--ink); }
+  a { color:inherit; }
+  header { display:flex; flex-wrap:wrap; gap:6px 12px; align-items:center; padding:8px 12px; border-bottom:1px solid var(--line); background:var(--panel); }
+  header h1 { font-size:16px; margin:0; flex:1 1 auto; }
+  header h1 a { text-decoration:none; }
+  header nav { display:flex; gap:12px; font-size:13px; color:var(--muted); }
+  header nav a { display:inline-flex; align-items:center; min-height:32px; }
+  main { display:grid; grid-template-columns:minmax(0,1fr) 320px; gap:12px; padding:12px; max-width:1180px; margin:0 auto; }
+  section, aside > div { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:10px; }
+  aside { display:flex; flex-direction:column; gap:12px; min-width:0; }
+  h2 { font-size:13px; margin:0 0 6px; color:var(--muted); font-weight:600; }
+  button, select { font:inherit; padding:6px 12px; border-radius:6px; border:1px solid var(--line); background:var(--bg); color:var(--ink); cursor:pointer; }
+  button.primary { background:var(--accent); color:#fff; border-color:var(--accent); }
+  button:disabled { opacity:.45; cursor:default; }
+  .row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  #status { font-weight:600; min-height:1.5em; }
+  #status.busy::before { content:""; display:inline-block; width:10px; height:10px; margin-right:8px; border-radius:50%; border:2px solid var(--accent); border-right-color:transparent; animation:spin .8s linear infinite; vertical-align:-1px; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { #status.busy::before { animation-duration:2.4s; } }
+
+  /* 宝石（チップ）。色だけに頼らないよう、字（白・青…）も書く */
+  .gem { --c:var(--g0); --t:var(--t0); display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; border-radius:50%; background:var(--c); color:var(--t); font-size:12px; font-weight:700; border:1.5px solid rgba(0,0,0,.25); flex:none; }
+  .c0 { --c:var(--g0); --t:var(--t0); } .c1 { --c:var(--g1); --t:var(--t1); } .c2 { --c:var(--g2); --t:var(--t2); }
+  .c3 { --c:var(--g3); --t:var(--t3); } .c4 { --c:var(--g4); --t:var(--t4); } .c5 { --c:var(--g5); --t:var(--t5); }
+
+  /* 得点の欄 */
+  .players { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .pl { border:1px solid var(--line); border-radius:8px; padding:6px 8px; position:relative; }
+  .pl.me { border-left:5px solid var(--me); } .pl.ai { border-left:5px solid var(--ai); }
+  .pl.turn { outline:2px solid var(--accent); }
+  .pl .top { display:flex; align-items:baseline; gap:6px; }
+  .pl .top b { font-size:22px; }
+  .pl .top small { color:var(--muted); }
+  .pl .inv { display:grid; grid-template-columns:repeat(6, 1fr); gap:2px; margin-top:4px; text-align:center; font-size:12px; }
+  .pl .inv .gem { width:22px; height:22px; font-size:11px; margin:0 auto; }
+  .pl .inv .n { display:block; line-height:1.2; }
+  .pl .inv .n b { display:block; font-size:13px; }
+  .pl .inv .n i { display:block; font-style:normal; color:var(--muted); font-size:11px; }
+  .pl .legend { font-size:11px; color:var(--muted); }
+  .pl .meta { font-size:12px; color:var(--muted); margin-top:2px; }
+  .pl .think { display:none; position:absolute; right:8px; top:6px; font-size:12px; font-weight:600; color:var(--accent); background:var(--panel); }
+  .pl.thinking .think { display:inline; }
+
+  /* 場 */
+  .nobles { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:8px; }
+  .noble { border:1px solid var(--line); border-radius:8px; padding:4px 6px; background:linear-gradient(135deg, var(--bg), var(--panel)); display:flex; gap:6px; align-items:center; font-size:12px; }
+  .noble b { font-size:15px; }
+  .need { display:flex; gap:2px; }
+  .need span { width:20px; height:24px; border-radius:3px; display:inline-flex; align-items:center; justify-content:center; font-weight:700; font-size:12px; background:var(--c); color:var(--t); border:1px solid rgba(0,0,0,.25); }
+  .lvl { display:grid; grid-template-columns:62px repeat(4, minmax(0,1fr)); gap:6px; margin-bottom:6px; }
+  .card { display:flex; flex-direction:column; justify-content:flex-start; align-items:stretch; }
+  .deck, .card { border-radius:8px; border:1px solid var(--line); min-height:104px; position:relative; text-align:left; padding:0; overflow:hidden; background:var(--panel); }
+  .deck { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; font-size:12px; color:var(--muted); background:repeating-linear-gradient(45deg, var(--bg), var(--bg) 6px, var(--panel) 6px, var(--panel) 12px); }
+  .deck b { font-size:16px; color:var(--ink); }
+  .deck small { font-size:11px; }
+  .card .band { display:flex; justify-content:space-between; align-items:center; padding:3px 6px; background:var(--c); color:var(--t); min-height:30px; }
+  .card .band b { font-size:20px; line-height:1; }
+  .card .band .gem { width:20px; height:20px; border-color:rgba(255,255,255,.6); }
+  .card .cost { display:flex; flex-direction:column; gap:2px; padding:4px 6px; }
+  .card .cost span { display:inline-flex; align-items:center; gap:4px; font-size:12px; }
+  .card .cost .gem { width:18px; height:18px; font-size:11px; }
+  .card.can { box-shadow:0 0 0 2px var(--accent) inset; }
+  .card .canmark { position:absolute; right:4px; bottom:3px; font-size:11px; color:var(--accent); font-weight:700; }
+  .card.can .cost { padding-bottom:16px; } /* 「買える」の字が値段に重ならないように */
+  .card.empty { visibility:hidden; }
+  .card.hint, .deck.hint, .gembtn.hint { box-shadow:0 0 0 3px var(--hint) inset; }
+  .card.last, .deck.last { animation:flash 1.6s ease-out; }
+  @keyframes flash { 0% { box-shadow:0 0 0 4px var(--ai); } 100% { box-shadow:0 0 0 0 transparent; } }
+
+  /* 場の宝石（取る） */
+  .bank { display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
+  .gembtn { display:flex; flex-direction:column; align-items:center; gap:0; padding:4px 6px; min-width:48px; border-radius:10px; }
+  .gembtn .gem { width:32px; height:32px; font-size:13px; }
+  .gembtn small { font-size:12px; }
+  .gembtn.sel { outline:3px solid var(--accent); background:var(--panel); }
+  .gembtn .pick { font-size:11px; color:var(--accent); font-weight:700; min-height:1em; }
+  #takeRow { margin-top:6px; min-height:36px; }
+  #takeInfo { font-size:13px; color:var(--muted); }
+
+  /* 自分の予約札 */
+  .res { display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:6px; }
+  .res .card { min-height:96px; }
+  .res .none { color:var(--muted); font-size:12.5px; grid-column:1 / -1; }
+  .blindmark { position:absolute; left:4px; bottom:3px; font-size:11px; color:var(--muted); }
+
+  #log { max-height:240px; overflow:auto; font-size:12.5px; margin:0; padding-left:18px; }
+  #log li.ai { color:var(--ai); } #log li.me { color:var(--me); }
+  @media (prefers-color-scheme: dark) { #log li.ai { color:#8fb4ff; } #log li.me { color:#ff8f80; } }
+  #hintBox { font-size:13px; }
+  #hintBox ol { margin:4px 0 0; padding-left:18px; }
+  #evalBar { height:10px; border-radius:5px; background:var(--ai); overflow:hidden; margin:4px 0; }
+  #evalBar div { height:100%; background:var(--me); width:50%; transition:width .4s; }
+  #evalTxt { font-size:12.5px; color:var(--muted); }
+  #result { border:2px solid var(--accent); }
+  #result[hidden] { display:none; }
+  #result b { font-size:18px; }
+
+  dialog { border:1px solid var(--line); border-radius:12px; background:var(--panel); color:var(--ink); max-width:min(420px, calc(100vw - 32px)); padding:14px; }
+  dialog::backdrop { background:rgba(0,0,0,.4); }
+  dialog h3 { margin:0 0 8px; font-size:15px; }
+  dialog .opts { display:flex; flex-direction:column; gap:8px; margin-top:8px; }
+  dialog .opts button { text-align:left; }
+  .retgrid { display:grid; grid-template-columns:repeat(6, 1fr); gap:4px; text-align:center; font-size:12px; }
+  .retgrid button { padding:2px; min-height:36px; }
+  .note { font-size:12.5px; color:var(--muted); }
+  details summary { cursor:pointer; padding-block:6px; }
+  details p, details li { font-size:13px; }
+
+  @media (pointer: coarse), (max-width: 760px) {
+    button, select { min-height:44px; }
+    header nav a { min-height:44px; }
+    details summary { padding-block:13px; }
+  }
+  @media (max-width: 860px) {
+    main { grid-template-columns:minmax(0,1fr); padding:8px; gap:8px; }
+    /* スマホでは得点・場・自分の札の順に並べ、操作（取る）を親指の届く下に置く */
+  }
+  @media (max-width: 420px) {
+    .lvl { grid-template-columns:44px repeat(4, minmax(0,1fr)); gap:4px; }
+    .deck, .card { min-height:96px; }
+    .card .band { padding:2px 4px; }
+    .card .band b { font-size:17px; }
+    .card .cost { padding:3px 4px; }
+    .card .cost span { font-size:11.5px; gap:2px; }
+    .card .cost .gem { width:17px; height:17px; font-size:11px; }
+    .gembtn { min-width:0; flex:1; padding:4px 2px; }
+    .gembtn .gem { width:28px; height:28px; }
+    .deck small { display:none; }
+  }
+</style>
+<script src="../i18n_en.js"></script>
+<script src="../i18n.js"></script>
+</head>
+<body>
+<header>
+  <h1><a href="index.html">Gem Merchant's Workshop</a> <span style="font-weight:400">Human vs AI</span></h1>
+  <nav aria-label="Site"><a href="index.html">Home</a><a href="rules.html">How to play</a><a href="tips.html">Tips</a><a href="quiz.html">Quiz</a><a href="stats.html">Data</a><a href="../play.html" data-lang="ja" lang="ja" hreflang="ja">日本語</a></nav>
+</header>
+<main>
+  <div id="boardCol" style="display:flex;flex-direction:column;gap:12px;min-width:0">
+    <section aria-label="Score">
+      <div class="players" id="players"></div>
+      <div class="note" style="margin-top:4px">For each color, the top number is chips in hand and the lower “+n” is card discounts.</div>
+      <div class="row" style="margin-top:6px;justify-content:space-between">
+        <div id="status" role="status" aria-live="polite"></div>
+        <div class="row">
+          <button id="btnHint">Hint (what would the AI do?)</button>
+          <button id="btnUndo">Undo</button>
+        </div>
+      </div>
+    </section>
+    <section aria-label="Board">
+      <h2>Nobles (visit for 3 points at the end of your turn when your discounts qualify)</h2>
+      <div class="nobles" id="nobles"></div>
+      <h2>Cards (tap to buy or reserve)</h2>
+      <div id="levels"></div>
+    </section>
+    <section aria-label="Take gems">
+      <h2>Take gems (3 different, or 2 of a color with 4+)</h2>
+      <div class="bank" id="bank"></div>
+      <div class="row" id="takeRow">
+        <button class="primary" id="btnTake" disabled>Take</button>
+        <button id="btnClear" disabled>Pick again</button>
+        <span id="takeInfo"></span>
+      </div>
+    </section>
+    <section aria-label="Your reserved cards">
+      <h2>Your reserved cards (up to 3; tap to buy)</h2>
+      <div class="res" id="myRes"></div>
+    </section>
+  </div>
+  <aside>
+    <div id="sideTop">
+      <div class="row">
+        <label for="level">AI strength</label>
+        <select id="level">
+          <option value="easy">Easy</option>
+          <option value="normal" selected>Normal</option>
+          <option value="strong">Strong</option>
+          <option value="max">Strongest (a few seconds to think)</option>
+        </select>
+      </div>
+      <div class="row" style="margin-top:6px">
+        <label for="first">First player</label>
+        <select id="first">
+          <option value="me">You</option>
+          <option value="ai">AI</option>
+          <option value="rand">Random</option>
+        </select>
+        <button id="btnNew">New game</button>
+      </div>
+    </div>
+    <div id="result" hidden></div>
+    <div>
+      <h2>Position (AI's view)</h2>
+      <div id="evalBar" aria-hidden="true"><div></div></div>
+      <div id="evalTxt">Your winning chance appears once the AI has thought.</div>
+      <div id="hintBox"></div>
+    </div>
+    <div>
+      <h2>Move log</h2>
+      <ol id="log"></ol>
+    </div>
+    <div>
+      <details>
+        <summary>How to play (short)</summary>
+        <ul>
+          <li>On your turn, do one: take 3 gems of different colors / take 2 of a color with 4+ / reserve a card and take 1 gold / buy a card.</li>
+          <li>A bought card is a 1-gem discount in its color (for good). Some cards also have points.</li>
+          <li>You may hold up to 10 chips; return any excess. Gold stands in for any color.</li>
+          <li>When your discounts meet a noble's requirement, the noble visits at the end of your turn for 3 points.</li>
+          <li>When someone reaches 15 points, finish the round and the game ends. Most points wins (on a tie, fewer cards bought wins).</li>
+        </ul>
+        <p class="note">More in the <a href="rules.html">How to play page</a>.</p>
+      </details>
+    </div>
+  </aside>
+</main>
+
+<dialog id="dlg"><h3 id="dlgTitle"></h3><div id="dlgBody"></div><div class="opts" id="dlgOpts"></div></dialog>
+
+<script src="../gem_engine.js"></script>
+<script>
+"use strict";
+const E = GemEngine;
+const COLOR_NAMES = [T("白"), T("青"), T("緑"), T("赤"), T("黒"), T("金")];
+const ME = "me", AI = "ai";
+const $ = (id) => document.getElementById(id);
+const STORE = "gem-play-v1";
+
+let G = null; // { s, seat: 人の席(0/1), level, log: [], history: [局面], over }
+let picked = []; // 取ろうと選んだ色
+let worker = null, reqId = 0, pending = null;
+let hintFor = null; // ヒントを出した局面の手番の数
+
+function store(o) { try { localStorage.setItem(STORE, JSON.stringify(o)); } catch (e) { /* 保存できなくても遊べる */ } }
+function load() { try { return JSON.parse(localStorage.getItem(STORE) || "null"); } catch (e) { return null; } }
+
+function gemEl(c, text) {
+  const s = document.createElement("span");
+  s.className = "gem c" + c;
+  s.textContent = text === undefined ? (GEM_MARK ? GEM_MARK[c] : COLOR_NAMES[c]) : text;
+  if (GEM_MARK) s.title = COLOR_NAMES[c];
+  return s;
+}
+
+function cardName(cid) {
+  const c = E.CARDS[cid];
+  return T("{0}のカード（Lv{1}・{2}点）", COLOR_NAMES[c.color], c.level, c.points);
+}
+
+function describe(s, a) {
+  // 手を言葉にする（s は指す前の局面）
+  let t;
+  if (a.kind === "take3") t = T("宝石を取る: ") + a.arg.map((c) => COLOR_NAMES[c]).join(T("・"));
+  else if (a.kind === "take2") t = T("宝石を取る: {0}2つ", COLOR_NAMES[a.arg]);
+  else if (a.kind === "reserve") {
+    const [lv, i] = a.arg;
+    t = i < 0 ? T("Lv{0}の山札から伏せて予約", lv) : T("{0}を予約", cardName(s.board[lv][i]));
+  } else if (a.kind === "buy") {
+    const cid = a.arg[0] === "board" ? s.board[a.arg[1]][a.arg[2]] : s.players[E.current(s)].reserved[a.arg[1]][0];
+    t = T("{0}を買う", cardName(cid)) + (a.arg[0] === "reserved" ? T("（予約札から）") : "");
+  } else t = T("パス（指せる手がない）");
+  const r = a.ret.reduce((x, y) => x + y, 0);
+  if (r) t += T("、") + a.ret.map((n, c) => (n ? COLOR_NAMES[c] + n : "")).filter(Boolean).join(T("・")) + T("を戻す");
+  if (a.noble >= 0) t += T("、貴族が来た（+3点）");
+  return t;
+}
+
+// ---------- 描画 ----------
+function render() {
+  const s = G.s;
+  const myTurn = !s.done && E.current(s) === G.seat && !pending;
+  // 得点
+  const pl = $("players");
+  pl.innerHTML = "";
+  [G.seat, 1 - G.seat].forEach((i) => {
+    const p = s.players[i];
+    const d = document.createElement("div");
+    d.className = "pl " + (i === G.seat ? "me" : "ai") + (E.current(s) === i && !s.done ? " turn" : "") + (pending && pending.kind === "ai" && i !== G.seat ? " thinking" : "");
+    const tok = p.tokens.reduce((x, y) => x + y, 0);
+    d.innerHTML = T("<div class=\"top\"><span>{0}</span><b>{1}</b><small>点{2}</small></div><span class=\"think\">考え中…</span>", i === G.seat ? T("あなた") : "AI", p.points, i === 0 ? T("・先手") : T("・後手"));
+    const inv = document.createElement("div");
+    inv.className = "inv";
+    for (let c = 0; c < 6; c++) {
+      const cell = document.createElement("div");
+      cell.appendChild(gemEl(c));
+      const n = document.createElement("span");
+      n.className = "n";
+      n.innerHTML = c < 5 ? `<b>${p.tokens[c]}</b><i>+${p.bonus[c]}</i>` : `<b>${p.tokens[c]}</b>`;
+      n.title = c < 5 ? T("チップ{0}枚・割引{1}", p.tokens[c], p.bonus[c]) : T("金{0}枚", p.tokens[c]);
+      cell.appendChild(n);
+      inv.appendChild(cell);
+    }
+    d.appendChild(inv);
+    const meta = document.createElement("div");
+    meta.className = "meta";
+    meta.textContent = T("チップ{0}/10・予約{1}・カード{2}・貴族{3}", tok, p.reserved.length, p.bought, p.nobles.length);
+    meta.title = T("色ごとの上の数がチップ、下の +数 がカードの割引");
+    d.appendChild(meta);
+    pl.appendChild(d);
+  });
+  // 貴族
+  const nb = $("nobles");
+  nb.innerHTML = "";
+  if (!s.nobles.length) nb.innerHTML = T("<span class=\"note\">もう残っていない</span>");
+  for (const n of s.nobles) {
+    const d = document.createElement("div");
+    d.className = "noble";
+    const need = document.createElement("span");
+    need.className = "need";
+    E.NOBLES[n].need.forEach((x, c) => {
+      if (!x) return;
+      const sp = document.createElement("span");
+      sp.className = "c" + c;
+      sp.textContent = x;
+      sp.title = T("{0}の割引{1}枚", COLOR_NAMES[c], x);
+      need.appendChild(sp);
+    });
+    d.innerHTML = "<b>3</b>";
+    d.appendChild(need);
+    nb.appendChild(d);
+  }
+  // カード
+  const me = s.players[G.seat];
+  const lv = $("levels");
+  lv.innerHTML = "";
+  for (const level of [3, 2, 1]) {
+    const row = document.createElement("div");
+    row.className = "lvl";
+    const deck = document.createElement("button");
+    deck.className = "deck";
+    deck.dataset.key = `deck${level}`;
+    deck.innerHTML = T("<span>Lv{0}</span><b>{1}</b><small>枚</small>", level, s.decks[level].length);
+    deck.setAttribute("aria-label", T("レベル{0}の山札 {1}枚。押すと伏せて予約", level, s.decks[level].length));
+    deck.disabled = !myTurn || !s.decks[level].length || me.reserved.length >= E.MAX_RESERVED;
+    deck.onclick = () => chooseMain({ kind: "reserve", arg: [level, -1] }, T("Lv{0}の山札から伏せて予約しますか？（金を1つもらえる）", level));
+    row.appendChild(deck);
+    s.board[level].forEach((cid, i) => {
+      const b = cardEl(cid, myTurn);
+      b.dataset.key = `b${level}-${i}`;
+      if (cid >= 0) b.onclick = () => cardMenu({ where: "board", level, i, cid });
+      row.appendChild(b);
+    });
+    lv.appendChild(row);
+  }
+  // 場の宝石
+  const bank = $("bank");
+  bank.innerHTML = "";
+  for (let c = 0; c < 6; c++) {
+    const b = document.createElement("button");
+    b.className = "gembtn" + (picked.includes(c) ? " sel" : "");
+    b.dataset.key = `g${c}`;
+    b.appendChild(gemEl(c));
+    const sm = document.createElement("small");
+    sm.textContent = T("{0}枚", s.bank[c]);
+    b.appendChild(sm);
+    const pk = document.createElement("span");
+    pk.className = "pick";
+    const k = picked.filter((x) => x === c).length;
+    pk.textContent = k ? `+${k}` : "";
+    b.appendChild(pk);
+    b.setAttribute("aria-label", T("{0} 残り{1}枚", COLOR_NAMES[c], s.bank[c]) + (c === 5 ? T("（金は予約でだけもらえる）") : ""));
+    b.disabled = c === 5 || !myTurn || s.bank[c] === 0;
+    b.onclick = () => pickGem(c);
+    bank.appendChild(b);
+  }
+  updateTake();
+  // 予約札
+  const res = $("myRes");
+  res.innerHTML = "";
+  if (!me.reserved.length) res.innerHTML = T("<span class=\"none\">まだない。予約すると、その札は相手に取られず、金も1つもらえる。</span>");
+  me.reserved.forEach(([cid, blind], i) => {
+    const b = cardEl(cid, myTurn);
+    b.dataset.key = `r${i}`;
+    if (blind) {
+      const m = document.createElement("span");
+      m.className = "blindmark";
+      m.textContent = T("伏せ");
+      b.appendChild(m);
+    }
+    b.onclick = () => cardMenu({ where: "reserved", i, cid });
+    res.appendChild(b);
+  });
+  // 相手の予約札（伏せたものは見えない）は得点の欄に数だけ出す
+  $("btnHint").disabled = !myTurn;
+  $("btnUndo").disabled = !!pending || !G.history.length;
+  renderLog();
+  renderStatus();
+}
+
+function cardEl(cid, myTurn) {
+  const b = document.createElement("button");
+  b.className = "card";
+  if (cid < 0) {
+    b.classList.add("empty");
+    b.disabled = true;
+    return b;
+  }
+  const c = E.CARDS[cid];
+  const me = G.s.players[G.seat];
+  const band = document.createElement("div");
+  band.className = "band c" + c.color;
+  band.innerHTML = `<b>${c.points || ""}</b>`;
+  band.appendChild(gemEl(c.color));
+  b.appendChild(band);
+  const cost = document.createElement("div");
+  cost.className = "cost";
+  c.cost.forEach((x, k) => {
+    if (!x) return;
+    const sp = document.createElement("span");
+    sp.appendChild(gemEl(k, ""));
+    sp.appendChild(document.createTextNode("×" + x));
+    cost.appendChild(sp);
+  });
+  b.appendChild(cost);
+  if (E.payment(me, cid) !== null) {
+    b.classList.add("can");
+    b.appendChild(Object.assign(document.createElement("span"), { className: "canmark", textContent: T("買える") }));
+  }
+  b.disabled = !myTurn;
+  b.setAttribute("aria-label", cardName(cid) + T("、値段 ") + c.cost.map((x, k) => (x ? COLOR_NAMES[k] + x : "")).filter(Boolean).join(T("・")));
+  return b;
+}
+
+function renderLog() {
+  const ol = $("log");
+  ol.innerHTML = "";
+  for (const e of G.log) {
+    const li = document.createElement("li");
+    li.className = e.who;
+    li.textContent = (e.who === ME ? T("あなた: ") : "AI: ") + e.text;
+    ol.appendChild(li);
+  }
+  ol.scrollTop = ol.scrollHeight;
+}
+
+function renderStatus() {
+  const st = $("status");
+  const s = G.s;
+  st.classList.toggle("busy", !!pending);
+  if (s.done) st.textContent = T("対局が終わりました。");
+  else if (pending && pending.kind === "ai") st.textContent = T("AI が考えています…");
+  else if (pending && pending.kind === "hint") st.textContent = T("ヒントを考えています…");
+  else if (E.current(s) === G.seat) {
+    const last = s.players.some((p) => p.points >= E.WIN_POINTS);
+    st.textContent = T("あなたの番です。") + (last ? T("（最後の手番）") : "");
+  } else st.textContent = "";
+}
+
+function setEval(pMe) {
+  $("evalBar").firstElementChild.style.width = Math.round(pMe * 100) + "%";
+  $("evalTxt").textContent = T("あなたの勝つ見込み 約{0}%（AI の見立て。探索の結果なので目安）", Math.round(pMe * 100));
+}
+
+// ---------- 人の手 ----------
+function pickGem(c) {
+  const s = G.s;
+  if (picked.includes(c)) {
+    // 同じ色をもう一度: 2つ取り（4枚以上あるとき）。3度目は外す
+    if (picked.length === 1 && s.bank[c] >= 4) picked = [c, c];
+    else picked = picked.filter((x) => x !== c);
+  } else {
+    if (picked.length === 2 && picked[0] === picked[1]) picked = [];
+    if (picked.length >= 3) return;
+    picked.push(c);
+  }
+  render();
+}
+
+function pickedAction() {
+  if (!picked.length) return null;
+  if (picked.length === 2 && picked[0] === picked[1]) return { kind: "take2", arg: picked[0] };
+  return { kind: "take3", arg: picked.slice().sort((a, b) => a - b) };
+}
+
+function legalMatches(main) {
+  return E.legalActions(G.s).filter((a) => a.kind === main.kind && JSON.stringify(a.arg) === JSON.stringify(main.arg));
+}
+
+function updateTake() {
+  const main = pickedAction();
+  const ok = main && legalMatches(main).length > 0;
+  $("btnTake").disabled = !ok;
+  $("btnClear").disabled = !picked.length;
+  const avail = [0, 1, 2, 3, 4].filter((c) => G.s.bank[c] > 0).length;
+  let info = "";
+  if (!picked.length) info = E.current(G.s) === G.seat && !G.s.done ? T("色を押して選ぶ（同じ色を2回押すと2つ）") : "";
+  else if (!ok) info = picked.length < Math.min(3, avail) ? T("あと{0}色", Math.min(3, avail) - picked.length) : T("この取り方はできない");
+  $("takeInfo").textContent = info;
+}
+
+function cardMenu(o) {
+  const s = G.s;
+  const me = s.players[G.seat];
+  const opts = [];
+  const buyArg = o.where === "board" ? ["board", o.level, o.i] : ["reserved", o.i];
+  const pay = E.payment(me, o.cid);
+  if (pay) {
+    const txt = pay.map((n, c) => (n ? COLOR_NAMES[c] + n : "")).filter(Boolean).join(T("・")) || T("ただ（割引だけで買える）");
+    opts.push({ label: T("買う（払う: {0}）", txt), primary: true, fn: () => chooseMain({ kind: "buy", arg: buyArg }) });
+  } else {
+    const need = E.effectiveCost(me, o.cid);
+    const short = need.reduce((t, n, c) => t + Math.max(0, n - me.tokens[c]), 0) - me.tokens[5];
+    opts.push({ label: T("まだ買えない（あと{0}つ足りない）", short), disabled: true });
+  }
+  if (o.where === "board") {
+    const can = me.reserved.length < E.MAX_RESERVED;
+    opts.push({ label: can ? T("予約する（金を1つもらう") + (s.bank[5] ? T("）") : T("…が金はもう無い）")) : T("予約はもう3枚"), disabled: !can, fn: () => chooseMain({ kind: "reserve", arg: [o.level, o.i] }) });
+  }
+  opts.push({ label: T("やめる"), fn: () => {} });
+  showDialog(cardName(o.cid), "", opts);
+}
+
+function chooseMain(main, confirmText) {
+  const run = () => {
+    const acts = legalMatches(main);
+    if (!acts.length) return;
+    chooseRet(acts, (acts2) => chooseNoble(acts2, (a) => humanPlay(a)));
+  };
+  if (confirmText) showDialog(T("確かめ"), confirmText, [{ label: T("はい"), primary: true, fn: run }, { label: T("やめる"), fn: () => {} }]);
+  else run();
+}
+
+function chooseRet(acts, next) {
+  // 10枚を超えたら戻すチップを選ぶ（合法な戻し方の中から）
+  const rets = [];
+  const seen = new Set();
+  for (const a of acts) {
+    const k = a.ret.join(",");
+    if (!seen.has(k)) { seen.add(k); rets.push(a.ret); }
+  }
+  if (rets.length === 1 && rets[0].every((x) => !x)) return next(acts);
+  const total = rets[0].reduce((x, y) => x + y, 0);
+  const [tokens] = afterMainTokens(acts[0]);
+  const ret = [0, 0, 0, 0, 0, 0];
+  const body = document.createElement("div");
+  const p = document.createElement("p");
+  p.className = "note";
+  p.textContent = T("チップが{0}枚を超えるので、{1}枚を場に戻します。戻す色を選んでください。", E.MAX_TOKENS, total);
+  body.appendChild(p);
+  const grid = document.createElement("div");
+  grid.className = "retgrid";
+  body.appendChild(grid);
+  const okBtn = { label: T("戻す"), primary: true, fn: () => next(acts.filter((a) => a.ret.join(",") === ret.join(","))), keepOpen: false };
+  const draw = () => {
+    grid.innerHTML = "";
+    for (let c = 0; c < 6; c++) {
+      const cell = document.createElement("div");
+      cell.appendChild(gemEl(c));
+      const n = document.createElement("div");
+      n.textContent = T("{0}枚", tokens[c] - ret[c]);
+      cell.appendChild(n);
+      const up = document.createElement("button");
+      up.textContent = T("戻す {0}", ret[c]);
+      up.setAttribute("aria-label", T("{0}を1つ戻す（今{1}）", COLOR_NAMES[c], ret[c]));
+      up.disabled = ret[c] >= tokens[c];
+      up.onclick = () => {
+        const sum = ret.reduce((x, y) => x + y, 0);
+        if (sum >= total) return;
+        ret[c]++;
+        draw();
+      };
+      const dn = document.createElement("button");
+      dn.textContent = T("減らす");
+      dn.disabled = ret[c] === 0;
+      dn.onclick = () => { ret[c]--; draw(); };
+      cell.appendChild(up);
+      cell.appendChild(dn);
+      grid.appendChild(cell);
+    }
+    const sum = ret.reduce((x, y) => x + y, 0);
+    const btn = $("dlgOpts").querySelector("button.primary");
+    if (btn) btn.disabled = sum !== total;
+  };
+  showDialog(T("チップを戻す"), body, [okBtn, { label: T("やめる"), fn: () => {} }]);
+  draw();
+}
+
+function afterMainTokens(a) {
+  const s = E.clone(G.s);
+  const b = Object.assign({}, a, { ret: [0, 0, 0, 0, 0, 0], noble: -1 });
+  E.apply(s, b);
+  return [s.players[G.seat].tokens];
+}
+
+function chooseNoble(acts, next) {
+  const nobles = [...new Set(acts.map((a) => a.noble))];
+  if (nobles.length === 1) return next(acts[0]);
+  showDialog(T("どの貴族を迎えますか？"), T("条件を満たした貴族が2人以上います（1人だけ来ます）。"), nobles.map((n) => ({
+    label: T("貴族（") + E.NOBLES[n].need.map((x, c) => (x ? COLOR_NAMES[c] + x : "")).filter(Boolean).join(T("・")) + T("）"),
+    fn: () => next(acts.find((a) => a.noble === n)),
+  })));
+}
+
+function humanPlay(a) {
+  G.history.push({ s: E.clone(G.s), log: G.log.length });
+  G.log.push({ who: ME, text: describe(G.s, a) });
+  E.apply(G.s, a);
+  picked = [];
+  clearHint();
+  afterMove();
+}
+
+// ---------- AI ----------
+function ensureWorker() {
+  if (worker) return worker;
+  try {
+    worker = new Worker(GEM_BASE + "play_worker.js");
+    worker.onmessage = (e) => onWorker(e.data);
+  } catch (e) {
+    worker = null; // ファイルを直に開いたときなど。ページの中で考える
+  }
+  return worker;
+}
+
+function think(kind, state, opts) {
+  const id = ++reqId;
+  pending = { kind, id };
+  render();
+  const msg = Object.assign({ id, state, seed: (Math.random() * 2 ** 31) | 0 }, opts);
+  const w = ensureWorker();
+  if (w) w.postMessage(msg);
+  else setTimeout(() => {
+    const s = E.clone(state);
+    const out = msg.iterations ? E.mctsSearch(s, msg.iterations, E.makeRng(msg.seed)) : E.aiAct(s, msg.level, msg.seed);
+    onWorker({ id, best: out.best, stats: out.stats ? out.stats.slice(0, 5) : null, value: out.value });
+  }, 30);
+}
+
+function onWorker(d) {
+  if (!pending || d.id !== pending.id) return; // 待ったなどで古くなった答え
+  const kind = pending.kind;
+  pending = null;
+  if (kind === "ai") {
+    const s = G.s;
+    const a = E.legalActions(s).find((x) => E.sameAction(x, d.best)) || E.legalActions(s)[0];
+    const lastKey = a.kind === "buy" || a.kind === "reserve" ? keyOf(s, a) : null;
+    G.log.push({ who: AI, text: describe(s, a) });
+    E.apply(s, a);
+    if (d.stats && d.value != null) setEval(1 - d.value);
+    afterMove(lastKey);
+  } else if (kind === "hint") {
+    showHint(d);
+  }
+}
+
+function keyOf(s, a) {
+  if (a.kind === "reserve") return a.arg[1] < 0 ? `deck${a.arg[0]}` : `b${a.arg[0]}-${a.arg[1]}`;
+  if (a.kind === "buy" && a.arg[0] === "board") return `b${a.arg[1]}-${a.arg[2]}`;
+  return null;
+}
+
+function afterMove(flashKey) {
+  const s = G.s;
+  if (s.done) G.over = true;
+  save();
+  render();
+  if (flashKey) {
+    const el = document.querySelector(`[data-key="${flashKey}"]`);
+    if (el) el.classList.add("last");
+  }
+  if (s.done) return showResult();
+  if (E.current(s) !== G.seat) think("ai", s, { level: G.level });
+}
+
+function showResult() {
+  const s = G.s;
+  const r = E.result(s);
+  const me = s.players[G.seat], ai = s.players[1 - G.seat];
+  const box = $("result");
+  const head = r < 0 ? T("引き分け") : r === G.seat ? T("あなたの勝ち！") : T("AI の勝ち");
+  box.hidden = false;
+  box.innerHTML = T("<b>{0}</b><div>あなた {1}点（カード{2}枚） 対 AI {3}点（カード{4}枚）</div>", head, me.points, me.bought, ai.points, ai.bought);
+  const p = document.createElement("p");
+  p.className = "note";
+  p.textContent = r === G.seat && G.level !== "max" ? T("次はもう一段強い AI に挑戦してみましょう。") : T("ヒントで AI の考えを見ながら指すと、強い手の形がつかめます。");
+  box.appendChild(p);
+  const btn = document.createElement("button");
+  btn.className = "primary";
+  btn.textContent = T("もう一局");
+  btn.onclick = newGame;
+  box.appendChild(btn);
+}
+
+// ---------- ヒント ----------
+function clearHint() {
+  hintFor = null;
+  $("hintBox").innerHTML = "";
+  document.querySelectorAll(".hint").forEach((e) => e.classList.remove("hint"));
+}
+
+function showHint(d) {
+  const s = G.s;
+  hintFor = s.turn;
+  setEval(d.value);
+  const box = $("hintBox");
+  box.innerHTML = T("<b>AI ならこう指す（よく読んだ順）</b>");
+  const ol = document.createElement("ol");
+  for (const st of d.stats.slice(0, 3)) {
+    const li = document.createElement("li");
+    const v = st.value == null ? "" : T("（勝つ見込み 約{0}%）", Math.round(st.value * 100));
+    li.textContent = describe(s, st.action) + v;
+    ol.appendChild(li);
+  }
+  box.appendChild(ol);
+  const note = document.createElement("p");
+  note.className = "note";
+  note.textContent = T("紫の枠が1番目の手です。見込みは AI の探索での目安です。");
+  box.appendChild(note);
+  render();
+  const a = d.stats[0].action;
+  let key = keyOf(s, a);
+  if (a.kind === "buy" && a.arg[0] === "reserved") key = `r${a.arg[1]}`;
+  const keys = key ? [key] : a.kind === "take2" ? [`g${a.arg}`] : a.kind === "take3" ? a.arg.map((c) => `g${c}`) : [];
+  for (const k of keys) {
+    const el = document.querySelector(`[data-key="${k}"]`);
+    if (el) el.classList.add("hint");
+  }
+}
+
+// ---------- 対局の始めと保存 ----------
+function save() {
+  store({ s: G.s, seat: G.seat, level: G.level, log: G.log });
+}
+
+function newGame() {
+  const first = $("first").value;
+  const seat = first === "me" ? 0 : first === "ai" ? 1 : Math.random() < 0.5 ? 0 : 1;
+  G = { s: E.newGame((Math.random() * 2 ** 31) | 0), seat, level: $("level").value, log: [], history: [] };
+  pending = null;
+  picked = [];
+  clearHint();
+  $("result").hidden = true;
+  $("evalBar").firstElementChild.style.width = "50%";
+  $("evalTxt").textContent = T("AI が考えると、あなたの勝つ見込みが出ます。");
+  afterMove();
+}
+
+function undo() {
+  if (!G.history.length) return;
+  const h = G.history.pop();
+  G.s = h.s;
+  G.log = G.log.slice(0, h.log);
+  pending = null;
+  picked = [];
+  clearHint();
+  $("result").hidden = true;
+  save();
+  render();
+}
+
+function showDialog(title, body, opts) {
+  const dlg = $("dlg");
+  $("dlgTitle").textContent = title;
+  const b = $("dlgBody");
+  b.innerHTML = "";
+  if (typeof body === "string") { if (body) { const p = document.createElement("p"); p.textContent = body; b.appendChild(p); } }
+  else b.appendChild(body);
+  const o = $("dlgOpts");
+  o.innerHTML = "";
+  for (const op of opts) {
+    const btn = document.createElement("button");
+    btn.textContent = op.label;
+    if (op.primary) btn.className = "primary";
+    btn.disabled = !!op.disabled;
+    btn.onclick = () => { dlg.close(); if (op.fn) op.fn(); };
+    o.appendChild(btn);
+  }
+  if (typeof dlg.showModal === "function") dlg.showModal();
+  else dlg.setAttribute("open", "");
+}
+
+$("btnTake").onclick = () => { const m = pickedAction(); if (m) chooseMain(m); };
+$("btnClear").onclick = () => { picked = []; render(); };
+$("btnNew").onclick = newGame;
+$("btnUndo").onclick = undo;
+$("btnHint").onclick = () => think("hint", G.s, { iterations: 5000 });
+$("level").onchange = () => { if (G) { G.level = $("level").value; save(); } };
+
+(function start() {
+  const o = load();
+  if (o && o.s && !o.s.done) {
+    G = { s: E.clone(o.s), seat: o.seat, level: o.level || "normal", log: o.log || [], history: [] };
+    $("level").value = G.level;
+    afterMove();
+  } else newGame();
+})();
+</script>
+</body>
+</html>

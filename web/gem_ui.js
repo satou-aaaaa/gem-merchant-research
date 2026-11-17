@@ -3,7 +3,7 @@
 (function (root) {
   "use strict";
   const E = root.GemEngine;
-  const COLOR_NAMES = ["白", "青", "緑", "赤", "黒", "金"];
+  const COLOR_NAMES = [T("白"), T("青"), T("緑"), T("赤"), T("黒"), T("金")];
 
   function el(tag, cls, text) {
     const e = document.createElement(tag);
@@ -13,12 +13,14 @@
   }
 
   function gemEl(c, text) {
-    return el("span", "gem c" + c, text === undefined ? COLOR_NAMES[c] : text);
+    const g = el("span", "gem c" + c, text === undefined ? (root.GEM_MARK ? root.GEM_MARK[c] : COLOR_NAMES[c]) : text);
+    if (root.GEM_MARK) g.title = COLOR_NAMES[c];
+    return g;
   }
 
   function cardName(cid) {
     const c = E.CARDS[cid];
-    return `${COLOR_NAMES[c.color]}のカード（Lv${c.level}・${c.points}点）`;
+    return T("{0}のカード（Lv{1}・{2}点）", COLOR_NAMES[c.color], c.level, c.points);
   }
 
   function cardEl(cid, opts) {
@@ -41,10 +43,13 @@
       cost.appendChild(sp);
     });
     b.appendChild(cost);
-    if (opts && opts.player && E.payment(opts.player, cid) !== null) b.classList.add("can");
-    if (opts && opts.blind) b.appendChild(el("span", "blindmark", "伏せ"));
+    if (opts && opts.player && E.payment(opts.player, cid) !== null) {
+      b.classList.add("can");
+      b.appendChild(el("span", "canmark", T("買える")));
+    }
+    if (opts && opts.blind) b.appendChild(el("span", "blindmark", T("伏せ")));
     b.setAttribute("role", "img");
-    b.setAttribute("aria-label", cardName(cid) + "、値段 " + c.cost.map((x, k) => (x ? COLOR_NAMES[k] + x : "")).filter(Boolean).join("・"));
+    b.setAttribute("aria-label", cardName(cid) + T("、値段 ") + c.cost.map((x, k) => (x ? COLOR_NAMES[k] + x : "")).filter(Boolean).join(T("・")));
     return b;
   }
 
@@ -55,11 +60,11 @@
     E.NOBLES[n].need.forEach((x, c) => {
       if (!x) return;
       const sp = el("span", "c" + c, String(x));
-      sp.title = `${COLOR_NAMES[c]}の割引${x}枚`;
+      sp.title = T("{0}の割引{1}枚", COLOR_NAMES[c], x);
       need.appendChild(sp);
     });
     d.appendChild(need);
-    d.setAttribute("aria-label", "貴族 3点、条件 " + E.NOBLES[n].need.map((x, c) => (x ? COLOR_NAMES[c] + x : "")).filter(Boolean).join("・"));
+    d.setAttribute("aria-label", T("貴族 3点、条件 ") + E.NOBLES[n].need.map((x, c) => (x ? COLOR_NAMES[c] + x : "")).filter(Boolean).join(T("・")));
     return d;
   }
 
@@ -69,7 +74,7 @@
     const top = el("div", "top");
     top.appendChild(el("span", "", name));
     top.appendChild(el("b", "", String(p.points)));
-    top.appendChild(el("small", "", "点" + (i === 0 ? "・先手" : "・後手")));
+    top.appendChild(el("small", "", T("点") + (i === 0 ? T("・先手") : T("・後手"))));
     d.appendChild(top);
     const inv = el("div", "inv");
     for (let c = 0; c < 6; c++) {
@@ -83,11 +88,11 @@
     }
     d.appendChild(inv);
     const tok = p.tokens.reduce((x, y) => x + y, 0);
-    d.appendChild(el("div", "meta", `チップ${tok}/10・カード${p.bought}・貴族${p.nobles.length}`));
+    d.appendChild(el("div", "meta", T("チップ{0}/10・カード{1}・貴族{2}", tok, p.bought, p.nobles.length)));
     if (p.reserved.length) {
       const res = el("div", "res");
       p.reserved.forEach(([cid, blind]) => res.appendChild(cardEl(cid, { player: p, blind })));
-      d.appendChild(el("div", "meta", "予約札:"));
+      d.appendChild(el("div", "meta", T("予約札:")));
       d.appendChild(res);
     }
     return d;
@@ -97,12 +102,12 @@
   function renderBoard(box, s, me) {
     box.innerHTML = "";
     const pls = el("div", "players");
-    pls.appendChild(playerEl(s, me, "あなた", "me" + (E.current(s) === me ? " turn" : "")));
-    pls.appendChild(playerEl(s, 1 - me, "相手", "ai" + (E.current(s) !== me ? " turn" : "")));
+    pls.appendChild(playerEl(s, me, T("あなた"), "me" + (E.current(s) === me ? " turn" : "")));
+    pls.appendChild(playerEl(s, 1 - me, T("相手"), "ai" + (E.current(s) !== me ? " turn" : "")));
     box.appendChild(pls);
-    box.appendChild(el("div", "note", "色ごとに、上の数＝手持ちのチップ、下の「+数」＝カードの割引。相手の予約札も見えています。"));
+    box.appendChild(el("div", "note", T("色ごとに、上の数＝手持ちのチップ、下の「+数」＝カードの割引。相手の予約札も見えています。")));
     const nb = el("div", "nobles");
-    if (!s.nobles.length) nb.appendChild(el("span", "note", "貴族はもう残っていない"));
+    if (!s.nobles.length) nb.appendChild(el("span", "note", T("貴族はもう残っていない")));
     s.nobles.forEach((n) => nb.appendChild(nobleEl(n)));
     box.appendChild(nb);
     for (const level of [3, 2, 1]) {
@@ -111,17 +116,17 @@
       deck.appendChild(el("span", "", "Lv" + level));
       deck.appendChild(el("b", "", String(s.decks[level].length)));
       deck.setAttribute("role", "img");
-      deck.setAttribute("aria-label", `レベル${level}の山札 ${s.decks[level].length}枚`);
+      deck.setAttribute("aria-label", T("レベル{0}の山札 {1}枚", level, s.decks[level].length));
       row.appendChild(deck);
       s.board[level].forEach((cid) => row.appendChild(cardEl(cid, { player: s.players[me] })));
       box.appendChild(row);
     }
     const bank = el("div", "bank");
-    bank.appendChild(el("span", "note", "場の宝石:"));
+    bank.appendChild(el("span", "note", T("場の宝石:")));
     for (let c = 0; c < 6; c++) {
       const g = el("span", "bankgem");
       g.appendChild(gemEl(c));
-      g.appendChild(el("small", "", `${s.bank[c]}枚`));
+      g.appendChild(el("small", "", T("{0}枚", s.bank[c])));
       bank.appendChild(g);
     }
     box.appendChild(bank);
@@ -130,18 +135,18 @@
   // 手を言葉にする（s は指す前の局面）。play.html の describe と同じ言い方
   function describe(s, a) {
     let t;
-    if (a.kind === "take3") t = "宝石を取る: " + a.arg.map((c) => COLOR_NAMES[c]).join("・");
-    else if (a.kind === "take2") t = `宝石を取る: ${COLOR_NAMES[a.arg]}2つ`;
+    if (a.kind === "take3") t = T("宝石を取る: ") + a.arg.map((c) => COLOR_NAMES[c]).join(T("・"));
+    else if (a.kind === "take2") t = T("宝石を取る: {0}2つ", COLOR_NAMES[a.arg]);
     else if (a.kind === "reserve") {
       const [lv, i] = a.arg;
-      t = i < 0 ? `Lv${lv}の山札から伏せて予約` : `${cardName(s.board[lv][i])}を予約`;
+      t = i < 0 ? T("Lv{0}の山札から伏せて予約", lv) : T("{0}を予約", cardName(s.board[lv][i]));
     } else if (a.kind === "buy") {
       const cid = a.arg[0] === "board" ? s.board[a.arg[1]][a.arg[2]] : s.players[E.current(s)].reserved[a.arg[1]][0];
-      t = `${cardName(cid)}を買う` + (a.arg[0] === "reserved" ? "（予約札から）" : "");
-    } else t = "パス（指せる手がない）";
+      t = T("{0}を買う", cardName(cid)) + (a.arg[0] === "reserved" ? T("（予約札から）") : "");
+    } else t = T("パス（指せる手がない）");
     const r = a.ret.reduce((x, y) => x + y, 0);
-    if (r) t += "、" + a.ret.map((n, c) => (n ? COLOR_NAMES[c] + n : "")).filter(Boolean).join("・") + "を戻す";
-    if (a.noble >= 0) t += "、貴族が来る（+3点）";
+    if (r) t += T("、") + a.ret.map((n, c) => (n ? COLOR_NAMES[c] + n : "")).filter(Boolean).join(T("・")) + T("を戻す");
+    if (a.noble >= 0) t += T("、貴族が来る（+3点）");
     return t;
   }
 

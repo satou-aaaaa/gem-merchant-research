@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en" data-base="../">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>By the numbers | Gem Merchant's Workshop</title>
+<meta name="description" content="Numbers from games between strong AIs in Gem Merchant's Workshop: first-player edge, game length, how points are scored, and whether points or cards lead to wins.">
+<link rel="stylesheet" href="../site.css">
+<style>
+  :root { --series-1:#2a78d6; --track:#e9e5dc; }
+  @media (prefers-color-scheme: dark) { :root { --series-1:#3987e5; --track:#3a3d38; } }
+  .hero { display:flex; flex-wrap:wrap; gap:12px; margin:12px 0; }
+  .tile { flex:1 1 150px; background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:10px 12px; }
+  .tile b { display:block; font-size:28px; line-height:1.2; }
+  .tile span { font-size:14px; color:var(--muted); }
+  .bar { display:grid; grid-template-columns:5em minmax(0,1fr) 4.5em; gap:8px; align-items:center; font-size:14px; margin:3px 0; }
+  .bt { height:14px; background:var(--track); border-radius:4px; overflow:hidden; }
+  .bf { display:block; height:100%; background:var(--series-1); border-radius:0 4px 4px 0; }
+  .bv { text-align:right; font-variant-numeric:tabular-nums; }
+  .meter { display:inline-block; width:56px; height:10px; background:var(--track); border-radius:3px; overflow:hidden; vertical-align:middle; margin-right:6px; }
+  .meter.wide { width:72px; }
+  .meter span { display:block; height:100%; background:var(--series-1); }
+  .leadtbl td { white-space:nowrap; }
+  @media (max-width: 480px) { .leadtbl .meter { display:none; } }
+  table.pat td:first-child { white-space:normal; }
+  td { font-variant-numeric:tabular-nums; }
+  h3 { font-size:16px; margin:18px 0 6px; }
+</style>
+<script src="../i18n_en.js"></script>
+<script src="../i18n.js"></script>
+</head>
+<body>
+<header>
+  <a class="brand" href="index.html">Gem Merchant's Workshop</a>
+  <nav aria-label="Site"><a href="index.html">Home</a><a href="play.html">Play the AI</a><a href="rules.html">How to play</a><a href="tips.html">Tips</a><a href="quiz.html">Quiz</a><a href="stats.html" aria-current="page">Data</a><a href="../stats.html" data-lang="ja" lang="ja" hreflang="ja">日本語</a></nav>
+</header>
+<main>
+  <h1>Gem Merchant's Workshop by the numbers</h1>
+  <p class="lead">Numbers counted from 1,000 games between strong AIs. The AI is fmcts2000 (Information Set MCTS reading 2000 times per move). Human games may differ, but this shows what strong play looks like.</p>
+
+  <div class="hero">
+    <div class="tile"><b>48.4%</b><span>First player's win rate</span></div>
+    <div class="tile"><b>30.0</b><span>Average rounds per game</span></div>
+    <div class="tile"><b>15.6</b><span>Winner's average points</span></div>
+  </div>
+
+  <h2>Who has the edge, first or second player?</h2>
+  <p>The first player wins 48.4% (95% range 45.4%〜51.5%). No clear first-player edge. Draws: 9. With a gap this small, either seat can win.</p>
+
+  <h2>How long a game lasts</h2>
+  <p>Counting one move by each player as a round, a game lasts 30.0 rounds on average (median 29, shortest 22). 13 games were stopped at 100 rounds because nobody could buy and players only took and returned gems. The first card with points is bought around round 7.9 on average, and the first level 3 card around round 23.0.</p>
+  <div class="box" role="img" aria-label="Distribution of game length (rounds)"><div class="bar"><span class="bl">22–23</span><span class="bt"><span class="bf" style="width:0.8%" title="3 games"></span></span><span class="bv">3 games</span></div><div class="bar"><span class="bl">24–25</span><span class="bt"><span class="bf" style="width:9.8%" title="39 games"></span></span><span class="bv">39 games</span></div><div class="bar"><span class="bl">26–27</span><span class="bt"><span class="bf" style="width:45.6%" title="181 games"></span></span><span class="bv">181 games</span></div><div class="bar"><span class="bl">28–29</span><span class="bt"><span class="bf" style="width:100.0%" title="397 games"></span></span><span class="bv">397 games</span></div><div class="bar"><span class="bl">30–31</span><span class="bt"><span class="bf" style="width:63.5%" title="252 games"></span></span><span class="bv">252 games</span></div><div class="bar"><span class="bl">32–33</span><span class="bt"><span class="bf" style="width:20.4%" title="81 games"></span></span><span class="bv">81 games</span></div><div class="bar"><span class="bl">34–35</span><span class="bt"><span class="bf" style="width:6.0%" title="24 games"></span></span><span class="bv">24 games</span></div><div class="bar"><span class="bl">36–37</span><span class="bt"><span class="bf" style="width:1.3%" title="5 games"></span></span><span class="bv">5 games</span></div><div class="bar"><span class="bl">38–39</span><span class="bt"><span class="bf" style="width:1.0%" title="4 games"></span></span><span class="bv">4 games</span></div><div class="bar"><span class="bl">40+</span><span class="bt"><span class="bf" style="width:3.5%" title="14 games"></span></span><span class="bv">14 games</span></div></div>
+
+  <h2>Where do the winner's points come from?</h2>
+  <p>Most of the winner's points come from <b>Level 2 cards</b>. Winners average 15.6 points and losers 10.2.</p>
+  <div class="box" role="img" aria-label="Where the winner's points come from"><div class="bar"><span class="bl">Level 1</span><span class="bt"><span class="bf" style="width:9.0%" title="0.8 pts"></span></span><span class="bv">0.8 pts</span></div><div class="bar"><span class="bl">Level 2</span><span class="bt"><span class="bf" style="width:100.0%" title="9.1 pts"></span></span><span class="bv">9.1 pts</span></div><div class="bar"><span class="bl">Level 3</span><span class="bt"><span class="bf" style="width:45.0%" title="4.1 pts"></span></span><span class="bv">4.1 pts</span></div><div class="bar"><span class="bl">Nobles</span><span class="bt"><span class="bf" style="width:16.8%" title="1.5 pts"></span></span><span class="bv">1.5 pts</span></div></div>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Where points come from (average per game)</th><th>Winner</th><th>Loser</th></tr></thead>
+    <tbody><tr><th>Level 1 cards</th><td>0.8 pts</td><td>0.7 pts</td></tr><tr><th>Level 2 cards</th><td>9.1 pts</td><td>7.5 pts</td></tr><tr><th>Level 3 cards</th><td>4.1 pts</td><td>1.7 pts</td></tr><tr><th>Nobles</th><td>1.5 pts</td><td>0.3 pts</td></tr></tbody>
+  </table></div>
+  <h3>Cards bought</h3>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Level (average per game)</th><th>Winner</th><th>Loser</th></tr></thead>
+    <tbody><tr><th>Level 1 cards</th><td>6.1 cards</td><td>6.1 cards</td></tr><tr><th>Level 2 cards</th><td>5.1 cards</td><td>4.4 cards</td></tr><tr><th>Level 3 cards</th><td>1.0 cards</td><td>0.4 cards</td></tr></tbody>
+  </table></div>
+  <p>Average nobles: winners 0.51, losers 0.11.</p>
+
+  <h2>Mid-game, does leading in points or in cards win?</h2>
+  <p>The share of games won by the player ahead in points, or ahead in cards (discounts), at the end of that round. At round 10,<b>More cards (discounts)</b> is more often the winner.But by round 25 it flips, and the player ahead in points wins more often. Build cards (discounts) early, then switch to points late: the numbers show this flow.</p>
+  <p class="note">The right column: when one player leads in points and the other in cards, the share won by the player with more cards.</p>
+  <div class="tablewrap"><table class="leadtbl">
+    <thead><tr><th>Round</th><th>More points</th><th>More cards</th><th>When split, more cards</th></tr></thead>
+    <tbody><tr><th>5</th><td><span class="meter" title="61% (72 games)"><span style="width:61%"></span></span>61%</td><td><span class="meter" title="58% (272 games)"><span style="width:58%"></span></span>58%</td><td>—</td></tr><tr><th>10</th><td><span class="meter" title="54% (694 games)"><span style="width:54%"></span></span>54%</td><td><span class="meter" title="68% (527 games)"><span style="width:68%"></span></span>68%</td><td><span class="meter" title="62% (185 games)"><span style="width:62%"></span></span>62%</td></tr><tr><th>15</th><td><span class="meter" title="58% (812 games)"><span style="width:58%"></span></span>58%</td><td><span class="meter" title="69% (673 games)"><span style="width:69%"></span></span>69%</td><td><span class="meter" title="61% (308 games)"><span style="width:61%"></span></span>61%</td></tr><tr><th>20</th><td><span class="meter" title="64% (846 games)"><span style="width:64%"></span></span>64%</td><td><span class="meter" title="66% (752 games)"><span style="width:66%"></span></span>66%</td><td><span class="meter" title="53% (363 games)"><span style="width:53%"></span></span>53%</td></tr><tr><th>25</th><td><span class="meter" title="74% (846 games)"><span style="width:74%"></span></span>74%</td><td><span class="meter" title="61% (799 games)"><span style="width:61%"></span></span>61%</td><td><span class="meter" title="38% (330 games)"><span style="width:38%"></span></span>38%</td></tr></tbody>
+  </table></div>
+  <p class="note">Rounds where both are tied are not counted. Cells with fewer than 30 games show “—”.</p>
+
+  <h2>Card shapes the AI buys most</h2>
+  <p>By points and cost shape, level 1 has 8 shapes, level 2 has 6 and level 3 has 4 (the 5 color rotations count as one shape; counts are summed over colors). The level 1 shape the AI buys most is “0 pts, 4 gems (1＋1＋1＋1)”. The buyer's win rate hints at whether strong players buy that card (it doesn't mean the card caused the win).</p>
+  <h3>Level 1</h3><div class="tablewrap"><table class="pat"><thead><tr><th>Card shape (points, cost)</th><th>Bought per game</th><th>Buyer's win rate</th></tr></thead><tbody><tr><td>0 pts, 4 gems (1＋1＋1＋1)</td><td><span class="meter wide" title="1.71 cards"><span style="width:100%"></span></span>1.71 cards</td><td>51%</td></tr><tr><td>0 pts, 3 gems (2＋1)</td><td><span class="meter wide" title="1.68 cards"><span style="width:98%"></span></span>1.68 cards</td><td>51%</td></tr><tr><td>0 pts, 5 gems (2＋1＋1＋1)</td><td><span class="meter wide" title="1.61 cards"><span style="width:94%"></span></span>1.61 cards</td><td>51%</td></tr><tr><td>1 pts, 4 gems (4)</td><td><span class="meter wide" title="1.54 cards"><span style="width:90%"></span></span>1.54 cards</td><td>52%</td></tr><tr><td>0 pts, 4 gems (2＋2)</td><td><span class="meter wide" title="1.52 cards"><span style="width:89%"></span></span>1.52 cards</td><td>50%</td></tr><tr><td>0 pts, 5 gems (2＋2＋1)</td><td><span class="meter wide" title="1.44 cards"><span style="width:84%"></span></span>1.44 cards</td><td>48%</td></tr><tr><td>0 pts, 3 gems (3)</td><td><span class="meter wide" title="1.42 cards"><span style="width:83%"></span></span>1.42 cards</td><td>48%</td></tr><tr><td>0 pts, 5 gems (3＋1＋1) (including its own color)</td><td><span class="meter wide" title="1.21 cards"><span style="width:71%"></span></span>1.21 cards</td><td>46%</td></tr></tbody></table></div><h3>Level 2</h3><div class="tablewrap"><table class="pat"><thead><tr><th>Card shape (points, cost)</th><th>Bought per game</th><th>Buyer's win rate</th></tr></thead><tbody><tr><td>2 pts, 7 gems (4＋2＋1)</td><td><span class="meter wide" title="2.11 cards"><span style="width:100%"></span></span>2.11 cards</td><td>55%</td></tr><tr><td>1 pts, 7 gems (3＋2＋2)</td><td><span class="meter wide" title="1.96 cards"><span style="width:93%"></span></span>1.96 cards</td><td>50%</td></tr><tr><td>2 pts, 5 gems (5)</td><td><span class="meter wide" title="1.72 cards"><span style="width:82%"></span></span>1.72 cards</td><td>57%</td></tr><tr><td>1 pts, 8 gems (3＋3＋2) (including its own color)</td><td><span class="meter wide" title="1.47 cards"><span style="width:70%"></span></span>1.47 cards</td><td>50%</td></tr><tr><td>3 pts, 6 gems (6) (including its own color)</td><td><span class="meter wide" title="1.14 cards"><span style="width:54%"></span></span>1.14 cards</td><td>58%</td></tr><tr><td>2 pts, 8 gems (5＋3) (including its own color)</td><td><span class="meter wide" title="1.03 cards"><span style="width:49%"></span></span>1.03 cards</td><td>51%</td></tr></tbody></table></div><h3>Level 3</h3><div class="tablewrap"><table class="pat"><thead><tr><th>Card shape (points, cost)</th><th>Bought per game</th><th>Buyer's win rate</th></tr></thead><tbody><tr><td>4 pts, 12 gems (6＋3＋3) (including its own color)</td><td><span class="meter wide" title="0.41 cards"><span style="width:100%"></span></span>0.41 cards</td><td>72%</td></tr><tr><td>4 pts, 7 gems (7)</td><td><span class="meter wide" title="0.40 cards"><span style="width:99%"></span></span>0.40 cards</td><td>71%</td></tr><tr><td>5 pts, 10 gems (7＋3) (including its own color)</td><td><span class="meter wide" title="0.32 cards"><span style="width:79%"></span></span>0.32 cards</td><td>73%</td></tr><tr><td>3 pts, 14 gems (5＋3＋3＋3)</td><td><span class="meter wide" title="0.31 cards"><span style="width:76%"></span></span>0.31 cards</td><td>63%</td></tr></tbody></table></div>
+
+  <h2>Your move</h2>
+  <div class="hero">
+    <div class="tile"><b>5.0</b><span>Reserves per player per game</span></div>
+    <div class="tile"><b>48%</b><span>Reserved cards later bought</span></div>
+    <div class="tile"><b>8%</b><span>Reserves taken blind from a deck</span></div>
+    <div class="tile"><b>8%</b><span>Gem-taking moves that take 2 of one color</span></div>
+    <div class="tile"><b>11.8%</b><span>Turns that had to return chips for going over 10</span></div>
+  </div>
+
+  <p><a class="cta" href="play.html">Check it against the AI</a></p>
+  <p class="note">How we counted, and the raw records, are in <a href="https://github.com/satou-aaaaa/gem-merchant-research/blob/main/scripts/build_stats.py">scripts/build_stats.py</a>  and data/selfplay/. We rebuild it when the AI gets stronger.</p>
+</main>
+<footer>Gem Merchant's Workshop</footer>
+</body>
+</html>

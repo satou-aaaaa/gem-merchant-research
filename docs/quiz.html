@@ -27,11 +27,12 @@
   .nav button.primary { background:var(--accent); color:#fff; border-color:var(--accent); }
   #score { font-size:14px; color:var(--muted); }
 </style>
+<script src="i18n.js"></script>
 </head>
 <body>
 <header>
   <a class="brand" href="index.html">宝石商の工房</a>
-  <nav aria-label="サイト内"><a href="index.html">トップ</a><a href="play.html">AI と対戦</a><a href="rules.html">遊び方</a><a href="tips.html">コツ</a><a href="quiz.html" aria-current="page">クイズ</a><a href="stats.html">データ</a></nav>
+  <nav aria-label="サイト内"><a href="index.html">トップ</a><a href="play.html">AI と対戦</a><a href="rules.html">遊び方</a><a href="tips.html">コツ</a><a href="quiz.html" aria-current="page">クイズ</a><a href="stats.html">データ</a><a href="en/quiz.html" data-lang="en" lang="en" hreflang="en">English</a></nav>
 </header>
 <main>
   <h1>次の一手クイズ（終盤）</h1>
@@ -63,19 +64,19 @@ let idx = 0;
 const $ = (id) => document.getElementById(id);
 const toAct = (a) => ({ kind: a[0], arg: a[1], ret: a[2], noble: a[3] });
 const pct = (x) => Math.round(x * 100) + "%";
-const range = (lo, hi) => (Math.abs(hi - lo) < 0.005 ? pct(lo) : `${pct(lo)}〜${pct(hi)}`);
+const range = (lo, hi) => (Math.abs(hi - lo) < 0.005 ? pct(lo) : T("{0}〜{1}", pct(lo), pct(hi)));
 
 P.forEach((p, i) => {
   const o = document.createElement("option");
   o.value = i;
-  o.textContent = `第${p.id}問` + (p.greedy_correct ? "" : "（むずかしい）");
+  o.textContent = T("第{0}問", p.id) + (p.greedy_correct ? "" : T("（むずかしい）"));
   $("pick").appendChild(o);
 });
 
 function score() {
   const ids = Object.keys(done);
   const ok = ids.filter((k) => done[k]).length;
-  $("score").textContent = ids.length ? `正解 ${ok}／${ids.length}問` : "";
+  $("score").textContent = ids.length ? T("正解 {0}／{1}問", ok, ids.length) : "";
 }
 
 function show(i) {
@@ -85,15 +86,15 @@ function show(i) {
   const s = E.fromJSON(p.state);
   $("qtitle").innerHTML = "";
   const t = document.createElement("b");
-  t.textContent = `第${p.id}問`;
+  t.textContent = T("第{0}問", p.id);
   $("qtitle").appendChild(t);
   const tag = document.createElement("span");
   tag.className = "tag" + (p.greedy_correct ? "" : " hard");
-  tag.textContent = p.greedy_correct ? "ふつう" : "むずかしい";
+  tag.textContent = p.greedy_correct ? T("ふつう") : T("むずかしい");
   $("qtitle").append(" ", tag);
   U.renderBoard($("board"), s, p.me);
   const last = s.players.some((q) => q.points >= E.WIN_POINTS);
-  $("question").textContent = `あなた（${p.me === 0 ? "先手" : "後手"}）の番です。` + (last ? "これが最後の手番です。" : "") + "勝つ見込みがいちばん高い手はどれ？";
+  $("question").textContent = T("あなた（{0}）の番です。", p.me === 0 ? T("先手") : T("後手")) + (last ? T("これが最後の手番です。") : "") + T("勝つ見込みがいちばん高い手はどれ？");
   const box = $("choices");
   box.innerHTML = "";
   // 並びは毎回同じに混ぜる（正解がいつも1番目にならないように）
@@ -121,7 +122,7 @@ function answer(p, s, k) {
     if (kk === 0) b.classList.add("ok");
     else if (kk === k) b.classList.add("ng");
     const sm = document.createElement("small");
-    sm.textContent = (kk === 0 ? "正解・" : "") + "勝つ見込み " + range(c.lo, c.hi);
+    sm.textContent = (kk === 0 ? T("正解・") : "") + T("勝つ見込み ") + range(c.lo, c.hi);
     b.appendChild(sm);
   }
   const best = p.choices[0];
@@ -130,11 +131,11 @@ function answer(p, s, k) {
   box.innerHTML = "";
   const v = document.createElement("div");
   v.className = "verdict";
-  v.textContent = ok ? "正解！" : "おしい";
+  v.textContent = ok ? T("正解！") : T("おしい");
   box.appendChild(v);
   const otherHi = Math.max(...p.choices.slice(1).map((c) => c.hi));
   const exp = document.createElement("p");
-  exp.textContent = `正解は「${U.describe(s, toAct(best.action))}」。この手なら勝つ見込みは ${range(best.lo, best.hi)}。ほかの手は、どう転んでも ${pct(otherHi)} より上にはなりません。`;
+  exp.textContent = T("正解は「{0}」。この手なら勝つ見込みは {1}。ほかの手は、どう転んでも {2} より上にはなりません。", U.describe(s, toAct(best.action)), range(best.lo, best.hi), pct(otherHi));
   box.appendChild(exp);
   // 正解を指したあとの点（なぜ勝てるかの手がかり）
   const after = E.clone(s);
@@ -143,18 +144,18 @@ function answer(p, s, k) {
     E.apply(after, bestAct);
     const me = after.players[p.me], op = after.players[1 - p.me];
     const why = document.createElement("p");
-    why.textContent = `正解の手のあと: あなた ${me.points}点（カード${me.bought}枚）・相手 ${op.points}点（カード${op.bought}枚）。` + (bestAct.noble >= 0 ? "貴族も来ます。" : "") + (after.done ? "ここで対局が終わります。" : me.points >= E.WIN_POINTS ? "15点に届いたので、この一巡で終わります。" : "");
+    why.textContent = T("正解の手のあと: あなた {0}点（カード{1}枚）・相手 {2}点（カード{3}枚）。", me.points, me.bought, op.points, op.bought) + (bestAct.noble >= 0 ? T("貴族も来ます。") : "") + (after.done ? T("ここで対局が終わります。") : me.points >= E.WIN_POINTS ? T("15点に届いたので、この一巡で終わります。") : "");
     box.appendChild(why);
   }
   if (!p.greedy_correct && p.choices.length > 1) {
     const g = document.createElement("p");
-    g.textContent = `1手先だけを見る AI（やさしい）は「${U.describe(s, toAct(p.choices[1].action))}」を選びます。目先の点や割引より、最後の一巡まで見た勝ち負けを数えるのがこの問題のポイントです。`;
+    g.textContent = T("1手先だけを見る AI（やさしい）は「{0}」を選びます。目先の点や割引より、最後の一巡まで見た勝ち負けを数えるのがこの問題のポイントです。", U.describe(s, toAct(p.choices[1].action)));
     box.appendChild(g);
   }
   if (!ok) {
     const c = p.choices[k];
     const n = document.createElement("p");
-    n.textContent = `選んだ手の見込みは ${range(c.lo, c.hi)} で、正解より少なくとも ${pct(Math.max(0, best.lo - c.hi))} 低くなります。`;
+    n.textContent = T("選んだ手の見込みは {0} で、正解より少なくとも {1} 低くなります。", range(c.lo, c.hi), pct(Math.max(0, best.lo - c.hi)));
     box.appendChild(n);
   }
   score();

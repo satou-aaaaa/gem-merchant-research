@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en" data-base="../">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Next-move quiz | Gem Merchant's Workshop</title>
+<meta name="description" content="A next-move quiz for Gem Merchant's Workshop, with answers found by reading the endgame to the end. Learn which moves close out a win and which let it slip.">
+<link rel="stylesheet" href="../site.css">
+<link rel="stylesheet" href="../gem.css">
+<style>
+  main { max-width:820px; }
+  .qhead { display:flex; flex-wrap:wrap; gap:8px; align-items:center; justify-content:space-between; }
+  .qhead .tag { font-size:13px; padding:2px 8px; border-radius:10px; border:1px solid var(--line); background:var(--panel); }
+  .qhead .tag.hard { border-color:var(--hint); color:var(--hint); }
+  #question { font-weight:700; margin:12px 0 6px; }
+  #choices { display:flex; flex-direction:column; gap:8px; }
+  #choices button { font:inherit; text-align:left; padding:10px 12px; border-radius:8px; border:1px solid var(--line); background:var(--panel); color:var(--ink); cursor:pointer; min-height:48px; }
+  #choices button.ok { border:2px solid var(--accent); }
+  #choices button.ng { border:2px solid var(--me); }
+  #choices button:disabled { cursor:default; opacity:1; }
+  #choices button small { display:block; color:var(--muted); font-size:13px; }
+  #answer { margin-top:12px; }
+  #answer[hidden] { display:none; }
+  #answer .verdict { font-size:18px; font-weight:700; }
+  .nav { display:flex; gap:8px; flex-wrap:wrap; margin:14px 0; }
+  .nav button, .nav select { font:inherit; min-height:44px; padding:6px 14px; border-radius:8px; border:1px solid var(--line); background:var(--panel); color:var(--ink); }
+  .nav button.primary { background:var(--accent); color:#fff; border-color:var(--accent); }
+  #score { font-size:14px; color:var(--muted); }
+</style>
+<script src="../i18n_en.js"></script>
+<script src="../i18n.js"></script>
+</head>
+<body>
+<header>
+  <a class="brand" href="index.html">Gem Merchant's Workshop</a>
+  <nav aria-label="Site"><a href="index.html">Home</a><a href="play.html">Play the AI</a><a href="rules.html">How to play</a><a href="tips.html">Tips</a><a href="quiz.html" aria-current="page">Quiz</a><a href="stats.html">Data</a><a href="../quiz.html" data-lang="ja" lang="ja" hreflang="ja">日本語</a></nav>
+</header>
+<main>
+  <h1>Next-move quiz (endgame)</h1>
+  <p class="note">Endgame positions read to the very end over every card the decks could reveal, keeping only those with a single correct answer (27 puzzles; 5 are hard ones where looking only one move ahead goes wrong). Your opponent's reserved cards are shown face up.</p>
+  <div class="nav">
+    <label for="pick" class="note" style="align-self:center">Puzzle</label>
+    <select id="pick" aria-label="Choose a puzzle"></select>
+    <button id="prev">Previous</button>
+    <button id="next" class="primary">Next puzzle</button>
+  </div>
+  <div class="qhead"><span id="qtitle"></span><span id="score"></span></div>
+  <div class="board box" id="board"></div>
+  <p id="question"></p>
+  <div id="choices"></div>
+  <div id="answer" class="box" hidden></div>
+  <p class="note">“Chance” is the winning chance (draws count half). Where the position can't be fully read, it's a range (–) that holds however things turn out. How they're made: <a href="https://github.com/satou-aaaaa/gem-merchant-research/blob/main/scripts/make_puzzles.py">scripts/make_puzzles.py</a>.</p>
+</main>
+<footer>Gem Merchant's Workshop</footer>
+<script src="../gem_engine.js"></script>
+<script src="../gem_ui.js"></script>
+<script src="../puzzles.js"></script>
+<script>
+"use strict";
+const E = GemEngine, U = GemUI, P = window.GEM_PUZZLES;
+const KEY = "gem-quiz-v1";
+let done = {};
+try { done = JSON.parse(localStorage.getItem(KEY) || "{}"); } catch (e) { done = {}; }
+let idx = 0;
+const $ = (id) => document.getElementById(id);
+const toAct = (a) => ({ kind: a[0], arg: a[1], ret: a[2], noble: a[3] });
+const pct = (x) => Math.round(x * 100) + "%";
+const range = (lo, hi) => (Math.abs(hi - lo) < 0.005 ? pct(lo) : T("{0}〜{1}", pct(lo), pct(hi)));
+
+P.forEach((p, i) => {
+  const o = document.createElement("option");
+  o.value = i;
+  o.textContent = T("第{0}問", p.id) + (p.greedy_correct ? "" : T("（むずかしい）"));
+  $("pick").appendChild(o);
+});
+
+function score() {
+  const ids = Object.keys(done);
+  const ok = ids.filter((k) => done[k]).length;
+  $("score").textContent = ids.length ? T("正解 {0}／{1}問", ok, ids.length) : "";
+}
+
+function show(i) {
+  idx = (i + P.length) % P.length;
+  const p = P[idx];
+  $("pick").value = idx;
+  const s = E.fromJSON(p.state);
+  $("qtitle").innerHTML = "";
+  const t = document.createElement("b");
+  t.textContent = T("第{0}問", p.id);
+  $("qtitle").appendChild(t);
+  const tag = document.createElement("span");
+  tag.className = "tag" + (p.greedy_correct ? "" : " hard");
+  tag.textContent = p.greedy_correct ? T("ふつう") : T("むずかしい");
+  $("qtitle").append(" ", tag);
+  U.renderBoard($("board"), s, p.me);
+  const last = s.players.some((q) => q.points >= E.WIN_POINTS);
+  $("question").textContent = T("あなた（{0}）の番です。", p.me === 0 ? T("先手") : T("後手")) + (last ? T("これが最後の手番です。") : "") + T("勝つ見込みがいちばん高い手はどれ？");
+  const box = $("choices");
+  box.innerHTML = "";
+  // 並びは毎回同じに混ぜる（正解がいつも1番目にならないように）
+  const order = p.choices.map((c, k) => k).sort((a, b) => ((a * 7 + p.id * 3) % 5) - ((b * 7 + p.id * 3) % 5));
+  for (const k of order) {
+    const c = p.choices[k];
+    const b = document.createElement("button");
+    b.textContent = U.describe(s, toAct(c.action));
+    b.onclick = () => answer(p, s, k);
+    b.dataset.k = k;
+    box.appendChild(b);
+  }
+  $("answer").hidden = true;
+  score();
+}
+
+function answer(p, s, k) {
+  const ok = k === 0;
+  done[p.id] = ok;
+  try { localStorage.setItem(KEY, JSON.stringify(done)); } catch (e) { /* 覚えられなくても解ける */ }
+  for (const b of $("choices").querySelectorAll("button")) {
+    const kk = Number(b.dataset.k);
+    const c = p.choices[kk];
+    b.disabled = true;
+    if (kk === 0) b.classList.add("ok");
+    else if (kk === k) b.classList.add("ng");
+    const sm = document.createElement("small");
+    sm.textContent = (kk === 0 ? T("正解・") : "") + T("勝つ見込み ") + range(c.lo, c.hi);
+    b.appendChild(sm);
+  }
+  const best = p.choices[0];
+  const box = $("answer");
+  box.hidden = false;
+  box.innerHTML = "";
+  const v = document.createElement("div");
+  v.className = "verdict";
+  v.textContent = ok ? T("正解！") : T("おしい");
+  box.appendChild(v);
+  const otherHi = Math.max(...p.choices.slice(1).map((c) => c.hi));
+  const exp = document.createElement("p");
+  exp.textContent = T("正解は「{0}」。この手なら勝つ見込みは {1}。ほかの手は、どう転んでも {2} より上にはなりません。", U.describe(s, toAct(best.action)), range(best.lo, best.hi), pct(otherHi));
+  box.appendChild(exp);
+  // 正解を指したあとの点（なぜ勝てるかの手がかり）
+  const after = E.clone(s);
+  const bestAct = E.legalActions(after).find((a) => E.sameAction(a, toAct(best.action)) || (a.kind === best.action[0] && JSON.stringify(a.arg) === JSON.stringify(best.action[1]) && a.noble === best.action[3]));
+  if (bestAct) {
+    E.apply(after, bestAct);
+    const me = after.players[p.me], op = after.players[1 - p.me];
+    const why = document.createElement("p");
+    why.textContent = T("正解の手のあと: あなた {0}点（カード{1}枚）・相手 {2}点（カード{3}枚）。", me.points, me.bought, op.points, op.bought) + (bestAct.noble >= 0 ? T("貴族も来ます。") : "") + (after.done ? T("ここで対局が終わります。") : me.points >= E.WIN_POINTS ? T("15点に届いたので、この一巡で終わります。") : "");
+    box.appendChild(why);
+  }
+  if (!p.greedy_correct && p.choices.length > 1) {
+    const g = document.createElement("p");
+    g.textContent = T("1手先だけを見る AI（やさしい）は「{0}」を選びます。目先の点や割引より、最後の一巡まで見た勝ち負けを数えるのがこの問題のポイントです。", U.describe(s, toAct(p.choices[1].action)));
+    box.appendChild(g);
+  }
+  if (!ok) {
+    const c = p.choices[k];
+    const n = document.createElement("p");
+    n.textContent = T("選んだ手の見込みは {0} で、正解より少なくとも {1} 低くなります。", range(c.lo, c.hi), pct(Math.max(0, best.lo - c.hi)));
+    box.appendChild(n);
+  }
+  score();
+}
+
+$("prev").onclick = () => show(idx - 1);
+$("next").onclick = () => show(idx + 1);
+$("pick").onchange = () => show(Number($("pick").value));
+// まだ解いていない最初の問題から
+const first = P.findIndex((p) => !(p.id in done));
+show(first < 0 ? 0 : first);
+</script>
+</body>
+</html>
