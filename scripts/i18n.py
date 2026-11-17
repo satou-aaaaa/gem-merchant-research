@@ -35,12 +35,16 @@ class Missing(Exception):
 
 def translate_html(html: str, d: dict[str, str], missing: set[str]) -> str:
     """タグの間の文と属性の文を訳す。<script>・<style> の中は触らない（JS は T() で訳す）。"""
-    parts = re.split(r"(<script\b.*?</script>|<style\b.*?</style>|<[^>]+>)", html, flags=re.DOTALL)
+    parts = re.split(
+        r"(<script\b.*?</script\s*>|<style\b.*?</style\s*>|<[^>]+>)",
+        html,
+        flags=re.DOTALL | re.IGNORECASE,
+    )
     out = []
     for part in parts:
         if not part:
             continue
-        if part.startswith(("<script", "<style")):
+        if part.lower().startswith(("<script", "<style")):
             out.append(part)
         elif part.startswith("<"):
             out.append(_tag(part, d, missing))
@@ -99,7 +103,9 @@ def js_strings(src: str) -> tuple[set[str], list[str]]:
 
 
 def html_scripts(html: str) -> str:
-    return "\n".join(re.findall(r"<script\b[^>]*>(.*?)</script>", html, flags=re.DOTALL))
+    return "\n".join(
+        re.findall(r"<script\b[^>]*>(.*?)</script\s*>", html, flags=re.DOTALL | re.IGNORECASE)
+    )
 
 
 def main() -> None:

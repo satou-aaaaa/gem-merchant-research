@@ -109,7 +109,9 @@ def _build() -> tuple[dict[str, str], set[str]]:
         src = (
             text
             if name.endswith(".css")
-            else "\n".join(re.findall(r"<style\b.*?</style>", text, flags=re.DOTALL))
+            else "\n".join(
+                re.findall(r"<style\b.*?</style\s*>", text, flags=re.DOTALL | re.IGNORECASE)
+            )
         )
         for m in re.finditer(r'content:\s*"([^"]*)"', src):
             if i18n.CJK.search(m.group(1)):
