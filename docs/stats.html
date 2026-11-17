@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>データで見る | 宝石商の工房</title>
+<meta name="description" content="強い AI 同士の対局から分かった、宝石商の工房の数字: 先手有利、1局の長さ、点の取り方、点とカードのどちらが勝ちにつながるか。">
+<link rel="stylesheet" href="site.css">
+<style>
+  :root { --series-1:#2a78d6; --track:#e9e5dc; }
+  @media (prefers-color-scheme: dark) { :root { --series-1:#3987e5; --track:#3a3d38; } }
+  .hero { display:flex; flex-wrap:wrap; gap:12px; margin:12px 0; }
+  .tile { flex:1 1 150px; background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:10px 12px; }
+  .tile b { display:block; font-size:28px; line-height:1.2; }
+  .tile span { font-size:14px; color:var(--muted); }
+  .bar { display:grid; grid-template-columns:5em minmax(0,1fr) 4.5em; gap:8px; align-items:center; font-size:14px; margin:3px 0; }
+  .bt { height:14px; background:var(--track); border-radius:4px; overflow:hidden; }
+  .bf { display:block; height:100%; background:var(--series-1); border-radius:0 4px 4px 0; }
+  .bv { text-align:right; font-variant-numeric:tabular-nums; }
+  .meter { display:inline-block; width:56px; height:10px; background:var(--track); border-radius:3px; overflow:hidden; vertical-align:middle; margin-right:6px; }
+  .meter.wide { width:72px; }
+  .meter span { display:block; height:100%; background:var(--series-1); }
+  .leadtbl td { white-space:nowrap; }
+  @media (max-width: 480px) { .leadtbl .meter { display:none; } }
+  table.pat td:first-child { white-space:normal; }
+  td { font-variant-numeric:tabular-nums; }
+  h3 { font-size:16px; margin:18px 0 6px; }
+</style>
+</head>
+<body>
+<header>
+  <a class="brand" href="index.html">宝石商の工房</a>
+  <nav aria-label="サイト内"><a href="index.html">トップ</a><a href="play.html">AI と対戦</a><a href="rules.html">遊び方</a><a href="stats.html" aria-current="page">データ</a></nav>
+</header>
+<main>
+  <h1>データで見る宝石商の工房</h1>
+  <p class="lead">強い AI どうしの対局 1,000局から数えた数字です。AI は fmcts2000（1手に2000回読む情報集合 MCTS）。人の対局とは違うところもありますが、「強い指し方ではどうなるか」の目安になります。</p>
+
+  <div class="hero">
+    <div class="tile"><b>48.4%</b><span>先手の勝率</span></div>
+    <div class="tile"><b>30.0</b><span>1局の平均ラウンド数</span></div>
+    <div class="tile"><b>15.6</b><span>勝った人の平均点</span></div>
+  </div>
+
+  <h2>先手と後手、どちらが有利？</h2>
+  <p>先手の勝率は 48.4%（95%の幅で 45.4%〜51.5%）。先手と後手の差ははっきりしないと言えます。引き分けは 9局。このくらいの差なら、先手・後手どちらでも勝負になります。</p>
+
+  <h2>1局の長さ</h2>
+  <p>2人が1手ずつ指す一巡を1ラウンドとすると、平均 30.0ラウンド（真ん中は 29、いちばん短い局は 22）。だれも買えずに取って戻すだけになり、100ラウンドで打ち切った局が 13局ありました。最初に点の付いたカードが買われるのは平均 7.9ラウンド目、レベル3のカードが初めて買われるのは平均 23.0ラウンド目です。</p>
+  <div class="box" role="img" aria-label="1局のラウンド数の分布"><div class="bar"><span class="bl">22〜23</span><span class="bt"><span class="bf" style="width:0.8%" title="3局"></span></span><span class="bv">3局</span></div><div class="bar"><span class="bl">24〜25</span><span class="bt"><span class="bf" style="width:9.8%" title="39局"></span></span><span class="bv">39局</span></div><div class="bar"><span class="bl">26〜27</span><span class="bt"><span class="bf" style="width:45.6%" title="181局"></span></span><span class="bv">181局</span></div><div class="bar"><span class="bl">28〜29</span><span class="bt"><span class="bf" style="width:100.0%" title="397局"></span></span><span class="bv">397局</span></div><div class="bar"><span class="bl">30〜31</span><span class="bt"><span class="bf" style="width:63.5%" title="252局"></span></span><span class="bv">252局</span></div><div class="bar"><span class="bl">32〜33</span><span class="bt"><span class="bf" style="width:20.4%" title="81局"></span></span><span class="bv">81局</span></div><div class="bar"><span class="bl">34〜35</span><span class="bt"><span class="bf" style="width:6.0%" title="24局"></span></span><span class="bv">24局</span></div><div class="bar"><span class="bl">36〜37</span><span class="bt"><span class="bf" style="width:1.3%" title="5局"></span></span><span class="bv">5局</span></div><div class="bar"><span class="bl">38〜39</span><span class="bt"><span class="bf" style="width:1.0%" title="4局"></span></span><span class="bv">4局</span></div><div class="bar"><span class="bl">40以上</span><span class="bt"><span class="bf" style="width:3.5%" title="14局"></span></span><span class="bv">14局</span></div></div>
+
+  <h2>勝った人の点はどこから来る？</h2>
+  <p>勝った人の点でいちばん多いのは<b>レベル2のカード</b>からです。勝った人の平均は 15.6点、負けた人は 10.2点。</p>
+  <div class="box" role="img" aria-label="勝った人の点の内訳"><div class="bar"><span class="bl">レベル1</span><span class="bt"><span class="bf" style="width:9.0%" title="0.8点"></span></span><span class="bv">0.8点</span></div><div class="bar"><span class="bl">レベル2</span><span class="bt"><span class="bf" style="width:100.0%" title="9.1点"></span></span><span class="bv">9.1点</span></div><div class="bar"><span class="bl">レベル3</span><span class="bt"><span class="bf" style="width:45.0%" title="4.1点"></span></span><span class="bv">4.1点</span></div><div class="bar"><span class="bl">貴族</span><span class="bt"><span class="bf" style="width:16.8%" title="1.5点"></span></span><span class="bv">1.5点</span></div></div>
+  <div class="tablewrap"><table>
+    <thead><tr><th>点の出どころ（1局の平均）</th><th>勝った人</th><th>負けた人</th></tr></thead>
+    <tbody><tr><th>レベル1のカード</th><td>0.8点</td><td>0.7点</td></tr><tr><th>レベル2のカード</th><td>9.1点</td><td>7.5点</td></tr><tr><th>レベル3のカード</th><td>4.1点</td><td>1.7点</td></tr><tr><th>貴族</th><td>1.5点</td><td>0.3点</td></tr></tbody>
+  </table></div>
+  <h3>買ったカードの枚数</h3>
+  <div class="tablewrap"><table>
+    <thead><tr><th>レベル（1局の平均）</th><th>勝った人</th><th>負けた人</th></tr></thead>
+    <tbody><tr><th>レベル1のカード</th><td>6.1枚</td><td>6.1枚</td></tr><tr><th>レベル2のカード</th><td>5.1枚</td><td>4.4枚</td></tr><tr><th>レベル3のカード</th><td>1.0枚</td><td>0.4枚</td></tr></tbody>
+  </table></div>
+  <p>貴族が来た数の平均は、勝った人 0.51人・負けた人 0.11人。</p>
+
+  <h2>途中で勝っているのは、点か、カードか</h2>
+  <p>そのラウンドの終わりに「点が多い方」「カード（割引）が多い方」が、最後に勝った割合です。10ラウンド目では<b>カード（割引）の多い方</b>の方が勝ちにつながっています。ところが 25ラウンド目には逆になり、点の多い方が勝ちやすくなります。序盤はカード（割引）を増やし、終盤は点に切り替える、という流れが数字に出ています。</p>
+  <p class="note">右の列は、点で勝る人とカードで勝る人が別のときに、カードの多い方が勝った割合です。</p>
+  <div class="tablewrap"><table class="leadtbl">
+    <thead><tr><th>ラウンド</th><th>点が多い方</th><th>カードが多い方</th><th>分かれたとき、カードの多い方</th></tr></thead>
+    <tbody><tr><th>5</th><td><span class="meter" title="61%（72局）"><span style="width:61%"></span></span>61%</td><td><span class="meter" title="58%（272局）"><span style="width:58%"></span></span>58%</td><td>—</td></tr><tr><th>10</th><td><span class="meter" title="54%（694局）"><span style="width:54%"></span></span>54%</td><td><span class="meter" title="68%（527局）"><span style="width:68%"></span></span>68%</td><td><span class="meter" title="62%（185局）"><span style="width:62%"></span></span>62%</td></tr><tr><th>15</th><td><span class="meter" title="58%（812局）"><span style="width:58%"></span></span>58%</td><td><span class="meter" title="69%（673局）"><span style="width:69%"></span></span>69%</td><td><span class="meter" title="61%（308局）"><span style="width:61%"></span></span>61%</td></tr><tr><th>20</th><td><span class="meter" title="64%（846局）"><span style="width:64%"></span></span>64%</td><td><span class="meter" title="66%（752局）"><span style="width:66%"></span></span>66%</td><td><span class="meter" title="53%（363局）"><span style="width:53%"></span></span>53%</td></tr><tr><th>25</th><td><span class="meter" title="74%（846局）"><span style="width:74%"></span></span>74%</td><td><span class="meter" title="61%（799局）"><span style="width:61%"></span></span>61%</td><td><span class="meter" title="38%（330局）"><span style="width:38%"></span></span>38%</td></tr></tbody>
+  </table></div>
+  <p class="note">同点・同じ枚数の局は数えていません。数えた局が30局に満たないところは「—」。</p>
+
+  <h2>AI がよく買うカードの形</h2>
+  <p>カードは「点」と「値段の形」で分けると、レベル1は8通り、レベル2は6通り、レベル3は4通りです（色を回しただけの5枚を同じ形とし、買われる数は5色の合計）。レベル1で AI がいちばんよく買うのは「0点・宝石4個（1＋1＋1＋1）」の形です。買った人の勝率は、強い人ほど買う札かどうかの目安です（その札のおかげで勝ったとは限りません）。</p>
+  <h3>レベル1</h3><div class="tablewrap"><table class="pat"><thead><tr><th>カードの形（点・値段）</th><th>1局に買われる数</th><th>買った人の勝率</th></tr></thead><tbody><tr><td>0点・宝石4個（1＋1＋1＋1）</td><td><span class="meter wide" title="1.71枚"><span style="width:100%"></span></span>1.71枚</td><td>51%</td></tr><tr><td>0点・宝石3個（2＋1）</td><td><span class="meter wide" title="1.68枚"><span style="width:98%"></span></span>1.68枚</td><td>51%</td></tr><tr><td>0点・宝石5個（2＋1＋1＋1）</td><td><span class="meter wide" title="1.61枚"><span style="width:94%"></span></span>1.61枚</td><td>51%</td></tr><tr><td>1点・宝石4個（4）</td><td><span class="meter wide" title="1.54枚"><span style="width:90%"></span></span>1.54枚</td><td>52%</td></tr><tr><td>0点・宝石4個（2＋2）</td><td><span class="meter wide" title="1.52枚"><span style="width:89%"></span></span>1.52枚</td><td>50%</td></tr><tr><td>0点・宝石5個（2＋2＋1）</td><td><span class="meter wide" title="1.44枚"><span style="width:84%"></span></span>1.44枚</td><td>48%</td></tr><tr><td>0点・宝石3個（3）</td><td><span class="meter wide" title="1.42枚"><span style="width:83%"></span></span>1.42枚</td><td>48%</td></tr><tr><td>0点・宝石5個（3＋1＋1）（自分の色を含む）</td><td><span class="meter wide" title="1.21枚"><span style="width:71%"></span></span>1.21枚</td><td>46%</td></tr></tbody></table></div><h3>レベル2</h3><div class="tablewrap"><table class="pat"><thead><tr><th>カードの形（点・値段）</th><th>1局に買われる数</th><th>買った人の勝率</th></tr></thead><tbody><tr><td>2点・宝石7個（4＋2＋1）</td><td><span class="meter wide" title="2.11枚"><span style="width:100%"></span></span>2.11枚</td><td>55%</td></tr><tr><td>1点・宝石7個（3＋2＋2）</td><td><span class="meter wide" title="1.96枚"><span style="width:93%"></span></span>1.96枚</td><td>50%</td></tr><tr><td>2点・宝石5個（5）</td><td><span class="meter wide" title="1.72枚"><span style="width:82%"></span></span>1.72枚</td><td>57%</td></tr><tr><td>1点・宝石8個（3＋3＋2）（自分の色を含む）</td><td><span class="meter wide" title="1.47枚"><span style="width:70%"></span></span>1.47枚</td><td>50%</td></tr><tr><td>3点・宝石6個（6）（自分の色を含む）</td><td><span class="meter wide" title="1.14枚"><span style="width:54%"></span></span>1.14枚</td><td>58%</td></tr><tr><td>2点・宝石8個（5＋3）（自分の色を含む）</td><td><span class="meter wide" title="1.03枚"><span style="width:49%"></span></span>1.03枚</td><td>51%</td></tr></tbody></table></div><h3>レベル3</h3><div class="tablewrap"><table class="pat"><thead><tr><th>カードの形（点・値段）</th><th>1局に買われる数</th><th>買った人の勝率</th></tr></thead><tbody><tr><td>4点・宝石12個（6＋3＋3）（自分の色を含む）</td><td><span class="meter wide" title="0.41枚"><span style="width:100%"></span></span>0.41枚</td><td>72%</td></tr><tr><td>4点・宝石7個（7）</td><td><span class="meter wide" title="0.40枚"><span style="width:99%"></span></span>0.40枚</td><td>71%</td></tr><tr><td>5点・宝石10個（7＋3）（自分の色を含む）</td><td><span class="meter wide" title="0.32枚"><span style="width:79%"></span></span>0.32枚</td><td>73%</td></tr><tr><td>3点・宝石14個（5＋3＋3＋3）</td><td><span class="meter wide" title="0.31枚"><span style="width:76%"></span></span>0.31枚</td><td>63%</td></tr></tbody></table></div>
+
+  <h2>手の使い方</h2>
+  <div class="hero">
+    <div class="tile"><b>5.0</b><span>1人が1局に予約する回数</span></div>
+    <div class="tile"><b>48%</b><span>予約した札をあとで買った割合</span></div>
+    <div class="tile"><b>8%</b><span>予約のうち山札から伏せて取った割合</span></div>
+    <div class="tile"><b>8%</b><span>宝石を取る手のうち、同じ色2つの割合</span></div>
+    <div class="tile"><b>11.8%</b><span>10枚を超えてチップを戻した手番の割合</span></div>
+  </div>
+
+  <p><a class="cta" href="play.html">AI と対戦して確かめる</a></p>
+  <p class="note">集計のしかたと元の記録は <a href="https://github.com/satou-aaaaa/gem-merchant-research/blob/main/scripts/build_stats.py">scripts/build_stats.py</a> と data/selfplay/ にあります。AI が強くなったら作り直します。</p>
+</main>
+<footer>宝石商の工房</footer>
+</body>
+</html>

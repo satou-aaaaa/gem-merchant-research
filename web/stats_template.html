@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>データで見る | 宝石商の工房</title>
+<meta name="description" content="強い AI 同士の対局から分かった、宝石商の工房の数字: 先手有利、1局の長さ、点の取り方、点とカードのどちらが勝ちにつながるか。">
+<link rel="stylesheet" href="site.css">
+<style>
+  :root { --series-1:#2a78d6; --track:#e9e5dc; }
+  @media (prefers-color-scheme: dark) { :root { --series-1:#3987e5; --track:#3a3d38; } }
+  .hero { display:flex; flex-wrap:wrap; gap:12px; margin:12px 0; }
+  .tile { flex:1 1 150px; background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:10px 12px; }
+  .tile b { display:block; font-size:28px; line-height:1.2; }
+  .tile span { font-size:14px; color:var(--muted); }
+  .bar { display:grid; grid-template-columns:5em minmax(0,1fr) 4.5em; gap:8px; align-items:center; font-size:14px; margin:3px 0; }
+  .bt { height:14px; background:var(--track); border-radius:4px; overflow:hidden; }
+  .bf { display:block; height:100%; background:var(--series-1); border-radius:0 4px 4px 0; }
+  .bv { text-align:right; font-variant-numeric:tabular-nums; }
+  .meter { display:inline-block; width:56px; height:10px; background:var(--track); border-radius:3px; overflow:hidden; vertical-align:middle; margin-right:6px; }
+  .meter.wide { width:72px; }
+  .meter span { display:block; height:100%; background:var(--series-1); }
+  .leadtbl td { white-space:nowrap; }
+  @media (max-width: 480px) { .leadtbl .meter { display:none; } }
+  table.pat td:first-child { white-space:normal; }
+  td { font-variant-numeric:tabular-nums; }
+  h3 { font-size:16px; margin:18px 0 6px; }
+</style>
+</head>
+<body>
+<header>
+  <a class="brand" href="index.html">宝石商の工房</a>
+  <nav aria-label="サイト内"><a href="index.html">トップ</a><a href="play.html">AI と対戦</a><a href="rules.html">遊び方</a><a href="stats.html" aria-current="page">データ</a></nav>
+</header>
+<main>
+  <h1>データで見る宝石商の工房</h1>
+  <p class="lead">強い AI どうしの対局 {{games}}局から数えた数字です。AI は {{agent}}（1手に2000回読む情報集合 MCTS）。人の対局とは違うところもありますが、「強い指し方ではどうなるか」の目安になります。</p>
+
+  <div class="hero">
+    <div class="tile"><b>{{first_rate}}</b><span>先手の勝率</span></div>
+    <div class="tile"><b>{{rounds_mean}}</b><span>1局の平均ラウンド数</span></div>
+    <div class="tile"><b>{{win_points}}</b><span>勝った人の平均点</span></div>
+  </div>
+
+  <h2>先手と後手、どちらが有利？</h2>
+  <p>先手の勝率は {{first_rate}}（95%の幅で {{first_ci}}）。{{first_verdict}}と言えます。引き分けは {{draws}}局。{{first_note}}</p>
+
+  <h2>1局の長さ</h2>
+  <p>2人が1手ずつ指す一巡を1ラウンドとすると、平均 {{rounds_mean}}ラウンド（真ん中は {{rounds_median}}、いちばん短い局は {{rounds_min}}）。だれも買えずに取って戻すだけになり、100ラウンドで打ち切った局が {{capped}}局ありました。最初に点の付いたカードが買われるのは平均 {{first_point_round}}ラウンド目、レベル3のカードが初めて買われるのは平均 {{first_l3_round}}ラウンド目です。</p>
+  <div class="box" role="img" aria-label="1局のラウンド数の分布">{{rounds_hist}}</div>
+
+  <h2>勝った人の点はどこから来る？</h2>
+  <p>勝った人の点でいちばん多いのは<b>{{top_source}}</b>からです。勝った人の平均は {{win_points}}点、負けた人は {{lose_points}}点。</p>
+  <div class="box" role="img" aria-label="勝った人の点の内訳">{{sources_bars}}</div>
+  <div class="tablewrap"><table>
+    <thead><tr><th>点の出どころ（1局の平均）</th><th>勝った人</th><th>負けた人</th></tr></thead>
+    <tbody>{{sources_table}}</tbody>
+  </table></div>
+  <h3>買ったカードの枚数</h3>
+  <div class="tablewrap"><table>
+    <thead><tr><th>レベル（1局の平均）</th><th>勝った人</th><th>負けた人</th></tr></thead>
+    <tbody>{{buys_table}}</tbody>
+  </table></div>
+  <p>貴族が来た数の平均は、勝った人 {{nobles_w}}人・負けた人 {{nobles_l}}人。</p>
+
+  <h2>途中で勝っているのは、点か、カードか</h2>
+  <p>そのラウンドの終わりに「点が多い方」「カード（割引）が多い方」が、最後に勝った割合です。10ラウンド目では<b>{{early_leader}}</b>の方が勝ちにつながっています。{{crossover}}</p>
+  <p class="note">右の列は、点で勝る人とカードで勝る人が別のときに、カードの多い方が勝った割合です。</p>
+  <div class="tablewrap"><table class="leadtbl">
+    <thead><tr><th>ラウンド</th><th>点が多い方</th><th>カードが多い方</th><th>分かれたとき、カードの多い方</th></tr></thead>
+    <tbody>{{lead_table}}</tbody>
+  </table></div>
+  <p class="note">同点・同じ枚数の局は数えていません。数えた局が30局に満たないところは「—」。</p>
+
+  <h2>AI がよく買うカードの形</h2>
+  <p>カードは「点」と「値段の形」で分けると、レベル1は8通り、レベル2は6通り、レベル3は4通りです（色を回しただけの5枚を同じ形とし、買われる数は5色の合計）。レベル1で AI がいちばんよく買うのは「{{best_l1}}」の形です。買った人の勝率は、強い人ほど買う札かどうかの目安です（その札のおかげで勝ったとは限りません）。</p>
+  {{patterns}}
+
+  <h2>手の使い方</h2>
+  <div class="hero">
+    <div class="tile"><b>{{reserve_per_game}}</b><span>1人が1局に予約する回数</span></div>
+    <div class="tile"><b>{{reserved_bought}}</b><span>予約した札をあとで買った割合</span></div>
+    <div class="tile"><b>{{blind_share}}</b><span>予約のうち山札から伏せて取った割合</span></div>
+    <div class="tile"><b>{{take2_share}}</b><span>宝石を取る手のうち、同じ色2つの割合</span></div>
+    <div class="tile"><b>{{return_share}}</b><span>10枚を超えてチップを戻した手番の割合</span></div>
+  </div>
+
+  <p><a class="cta" href="play.html">AI と対戦して確かめる</a></p>
+  <p class="note">集計のしかたと元の記録は <a href="https://github.com/satou-aaaaa/gem-merchant-research/blob/main/scripts/build_stats.py">scripts/build_stats.py</a> と data/selfplay/ にあります。AI が強くなったら作り直します。</p>
+</main>
+<footer>宝石商の工房</footer>
+</body>
+</html>

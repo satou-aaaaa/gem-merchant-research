@@ -46,10 +46,11 @@
 - 手がかり: ROADMAP 段階4。carcassonne-research の selfplay_loop.py と selfplay.yml の形。
 
 ## R-005 先手有利の大きさを測る
-- 状態: 次
+- 状態: 済み
 - 優先: 4
 - 完了条件: mcts 同士の先後入れ替え400局以上で先手の勝率と95%区間を出し、docs/EXPERIMENTS.md に書く（重いので research-run.yml で）。
 - 手がかり: 2026-11-12 の対戦では先手 0.43〜0.51 で、まだ見えない。
+- 結果: PR #11、fmcts2000 の自分同士1000局で先手の勝率 0.484 [0.454, 0.515]。先手有利は見えない（差があっても ±5% 以内）。記録 `data/selfplay/fmcts2000.jsonl.gz` と集計 `data/stats.json` からデータページ `docs/stats.html` を作った。
 
 ## R-006 MCTS を速いエンジンに載せる
 - 状態: 済み
