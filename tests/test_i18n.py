@@ -21,7 +21,7 @@ def test_translate_html_text_and_attrs_but_not_scripts():
     # 大文字のタグ・閉じタグの空白でも JS の中は触らない（CodeQL の指摘）
     upper = i18n.translate_html('<SCRIPT>const y = "遊び方";</SCRIPT ><p>遊び方</p>', d, set())
     assert 'const y = "遊び方";' in upper and "<p>How to play</p>" in upper
-    assert i18n.html_scripts('<Script src="a"></Script><SCRIPT>x()</SCRIPT >') == "\nx()"
+    assert i18n.html_scripts('<Script src="a"></Script><SCRIPT>x()</SCRIPT\t\n bar>') == "\nx()"
 
 
 def test_js_strings_finds_untranslated_literals():
