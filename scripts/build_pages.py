@@ -4,7 +4,7 @@
     py scripts/build_pages.py --check   # docs/ が web/ と同じかだけを見る（違えば終了コード 1。check.py が使う）
 
 ページを直すときは web/ の方を直してから、これで docs/ を作り直す（docs/*.html を直に直さない）。
-集計から組み立てるページ（stats.html・tips.html）は web/<名前>_template.html の {{名前}} を埋めて作る。
+集計から組み立てるページ（stats.html・tips.html・quiz.html）は web/<名前>_template.html の {{名前}} を埋めて作る。
 """
 
 from __future__ import annotations
@@ -18,7 +18,16 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 WEB = ROOT / "web"
 DOCS = ROOT / "docs"
-FILES = ["index.html", "play.html", "rules.html", "site.css", "gem_engine.js", "play_worker.js"]
+FILES = [
+    "index.html",
+    "play.html",
+    "rules.html",
+    "site.css",
+    "gem.css",
+    "gem_engine.js",
+    "gem_ui.js",
+    "play_worker.js",
+]
 
 
 def fill(template: str, values: dict[str, str]) -> str:
@@ -40,6 +49,16 @@ def built() -> dict[str, str]:
     out["stats.html"] = fill(tpl, stats_page.render(stats))
     tpl = (WEB / "tips_template.html").read_text(encoding="utf-8")
     out["tips.html"] = fill(tpl, stats_page.tips(stats))
+    puzzles = json.loads((ROOT / "data" / "endgame_puzzles.json").read_text(encoding="utf-8"))
+    out["puzzles.js"] = (
+        "// data/endgame_puzzles.json から scripts/build_pages.py が作る（手で直さない）\n"
+        "window.GEM_PUZZLES = "
+        + json.dumps(puzzles, ensure_ascii=False, separators=(",", ":"))
+        + ";\n"
+    )
+    tpl = (WEB / "quiz_template.html").read_text(encoding="utf-8")
+    hard = sum(not p["greedy_correct"] for p in puzzles)
+    out["quiz.html"] = fill(tpl, {"count": str(len(puzzles)), "hard": str(hard)})
     return out
 
 

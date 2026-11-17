@@ -67,11 +67,12 @@
 - 手がかり: R-002 では二巡先で言い切れたのは調べた手の約3割。今は根の区間を全部正確に出しているので、判定に要らない枝を読みすぎている（期待値つきミニマックスの枝刈り Star1・Star2: Ballard 1983 "The *-minimax search procedure for trees containing chance nodes"）。
 
 ## R-008 読み切りで「正解つきの終盤問題」を作る
-- 状態: 次
+- 状態: 済み
 - 優先: 3
 - 待ち: R-002
 - 完了条件: 読み切りで最善の手が1つだけに決まり、ほかの手が確実に悪い局面を、自分同士の対局から20問以上集めて `data/endgame_puzzles.json` に書く（局面・正解・ほかの手の損）。問題の作り方を docs/EXPERIMENTS.md に書く。
 - 手がかり: ROADMAP「並行: GTO の研究」の3歩目（クイズ・コツ集の材料）。carcassonne-research の data/puzzles.json の形。
+- 結果: 2026-11-17 27問（むずかしい5問）を `data/endgame_puzzles.json` に。クイズのページ `docs/quiz.html` にした。EXPERIMENTS.md「次の一手クイズ（R-008）」。
 
 ## R-009 コツ集（強い AI の数字から）
 - 状態: 済み

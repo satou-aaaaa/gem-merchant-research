@@ -1,0 +1,53 @@
+/* 局面の部品（カード・宝石・貴族・得点の欄）。クイズ・コツ集が使う（対戦ページは play.html の中に同じ見た目を持つ） */
+:root { --me:#c0392b; --ai:#2f6fd6; --hint:#8e44ad;
+  --t0:#333; --t1:#fff; --t2:#fff; --t3:#fff; --t4:#fff; --t5:#3a2a00; }
+.gem { --c:var(--g0); --t:var(--t0); display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; border-radius:50%; background:var(--c); color:var(--t); font-size:12px; font-weight:700; border:1.5px solid rgba(0,0,0,.25); flex:none; vertical-align:middle; }
+.c0 { --c:var(--g0); --t:var(--t0); } .c1 { --c:var(--g1); --t:var(--t1); } .c2 { --c:var(--g2); --t:var(--t2); }
+.c3 { --c:var(--g3); --t:var(--t3); } .c4 { --c:var(--g4); --t:var(--t4); } .c5 { --c:var(--g5); --t:var(--t5); }
+.board { display:flex; flex-direction:column; gap:8px; font-size:14px; line-height:1.5; }
+.players { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.pl { border:1px solid var(--line); border-radius:8px; padding:6px 8px; background:var(--panel); min-width:0; }
+.pl.me { border-left:5px solid var(--me); } .pl.ai { border-left:5px solid var(--ai); }
+.pl.turn { outline:2px solid var(--accent); }
+.pl .top { display:flex; align-items:baseline; gap:6px; }
+.pl .top b { font-size:22px; }
+.pl .top small { color:var(--muted); font-size:12px; }
+.pl .inv { display:grid; grid-template-columns:repeat(6, 1fr); gap:2px; margin-top:4px; text-align:center; font-size:12px; }
+.pl .inv .gem { width:22px; height:22px; font-size:11px; margin:0 auto; display:flex; }
+.pl .inv .n b { display:block; font-size:13px; }
+.pl .inv .n i { display:block; font-style:normal; color:var(--muted); font-size:11px; }
+.pl .meta { font-size:12px; color:var(--muted); margin-top:2px; }
+.pl .res { display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:4px; }
+.pl .res .card { min-height:84px; }
+.nobles { display:flex; gap:8px; flex-wrap:wrap; }
+.noble { border:1px solid var(--line); border-radius:8px; padding:4px 6px; background:var(--panel); display:flex; gap:6px; align-items:center; font-size:12px; }
+.noble b { font-size:15px; }
+.need { display:flex; gap:2px; }
+.need span { width:20px; height:24px; border-radius:3px; display:inline-flex; align-items:center; justify-content:center; font-weight:700; font-size:12px; background:var(--c); color:var(--t); border:1px solid rgba(0,0,0,.25); }
+.lvl { display:grid; grid-template-columns:52px repeat(4, minmax(0,1fr)); gap:6px; }
+.deck, .card { border-radius:8px; border:1px solid var(--line); min-height:96px; position:relative; overflow:hidden; background:var(--panel); }
+.deck { display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:12px; color:var(--muted); background:repeating-linear-gradient(45deg, var(--bg), var(--bg) 6px, var(--panel) 6px, var(--panel) 12px); }
+.deck b { font-size:16px; color:var(--ink); }
+.card { display:flex; flex-direction:column; }
+.card .band { display:flex; justify-content:space-between; align-items:center; padding:3px 6px; background:var(--c); color:var(--t); min-height:28px; }
+.card .band b { font-size:19px; line-height:1; }
+.card .band .gem { width:20px; height:20px; border-color:rgba(255,255,255,.6); }
+.card .cost { display:flex; flex-direction:column; gap:2px; padding:4px 6px; }
+.card .cost span { display:inline-flex; align-items:center; gap:4px; font-size:12px; }
+.card .cost .gem { width:17px; height:17px; font-size:11px; }
+.card.can { box-shadow:0 0 0 2px var(--accent) inset; }
+.card.can::after { content:"買える"; position:absolute; right:4px; bottom:3px; font-size:11px; color:var(--accent); font-weight:700; }
+.card.can .cost { padding-bottom:16px; }
+.card.empty { visibility:hidden; }
+.blindmark { position:absolute; left:4px; bottom:3px; font-size:11px; color:var(--muted); }
+.bank { display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
+.bankgem { display:inline-flex; flex-direction:column; align-items:center; min-width:40px; }
+.bankgem small { font-size:12px; }
+@media (max-width: 420px) {
+  .lvl { grid-template-columns:40px repeat(4, minmax(0,1fr)); gap:4px; }
+  .card .band { padding:2px 4px; }
+  .card .band b { font-size:16px; }
+  .card .cost { padding:3px 4px; }
+  .card .cost span { gap:2px; }
+  .pl .inv .gem { width:20px; height:20px; }
+}
