@@ -75,6 +75,7 @@
   .card .cost .gem { width:18px; height:18px; font-size:11px; }
   .card.can { box-shadow:0 0 0 2px var(--accent) inset; }
   .card.can::after { content:"買える"; position:absolute; right:4px; bottom:3px; font-size:11px; color:var(--accent); font-weight:700; }
+  .card.can .cost { padding-bottom:16px; } /* 「買える」の字が値段に重ならないように */
   .card.empty { visibility:hidden; }
   .card.hint, .deck.hint, .gembtn.hint { box-shadow:0 0 0 3px var(--hint) inset; }
   .card.last, .deck.last { animation:flash 1.6s ease-out; }
@@ -145,7 +146,7 @@
 <body>
 <header>
   <h1><a href="index.html">宝石商の工房</a> <span style="font-weight:400">人間 vs AI</span></h1>
-  <nav aria-label="サイト内"><a href="index.html">トップ</a><a href="rules.html">遊び方</a><a href="tips.html">コツ</a><a href="stats.html">データ</a></nav>
+  <nav aria-label="サイト内"><a href="index.html">トップ</a><a href="rules.html">遊び方</a><a href="tips.html">コツ</a><a href="quiz.html">クイズ</a><a href="stats.html">データ</a></nav>
 </header>
 <main>
   <div id="boardCol" style="display:flex;flex-direction:column;gap:12px;min-width:0">

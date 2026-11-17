@@ -14,6 +14,7 @@
 //   - ボタン・入力欄に名前（文字・aria-label・label）がある
 //   - 文字は 11px 以上、viewport の指定がある
 //   - 対戦ページは「新しい対局」から宝石を取り、AI が1手返すまで動かす。カードを押すと選び方が出る。ヒントが出る
+//   - クイズは盤が描かれ、選択肢を押すと答えが出て、次の問題へ進める
 
 import http from "node:http";
 import fs from "node:fs";
@@ -127,6 +128,17 @@ async function playCheck(page, size) {
   }
 }
 
+async function quizCheck(page, size) {
+  // 盤が描かれ、選択肢を押すと答えと解説が出る。次の問題へ進める
+  const n = await page.$$eval("#board .card:not(.empty)", (l) => l.length);
+  if (n < 6) bad("quiz.html", size.name, `盤のカードが少ない（${n}枚）`);
+  await page.click("#choices button:first-child");
+  if (await page.$eval("#answer", (e) => e.hidden)) bad("quiz.html", size.name, "選択肢を押しても答えが出ない");
+  if (shotsDir) await page.screenshot({ path: path.join(shotsDir, `quiz-answer-${size.name}.png`), fullPage: true });
+  await page.click("#next");
+  if (!(await page.$eval("#answer", (e) => e.hidden))) bad("quiz.html", size.name, "次の問題で前の答えが残る");
+}
+
 const browser = await chromium.launch();
 for (const size of SIZES) {
   for (const name of PAGES) {
@@ -144,6 +156,7 @@ for (const size of SIZES) {
     await page.goto(BASE + name);
     await page.waitForLoadState("networkidle");
     if (name === "play.html") await playCheck(page, size);
+    if (name === "quiz.html") await quizCheck(page, size);
     await audit(page, name, size);
     if (shotsDir) {
       fs.mkdirSync(shotsDir, { recursive: true });
