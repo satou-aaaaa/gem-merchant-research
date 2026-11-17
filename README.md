@@ -6,7 +6,7 @@
 
 - 調べたこと: [docs/RESEARCH.md](docs/RESEARCH.md)
 - 進め方: [docs/ROADMAP.md](docs/ROADMAP.md)（段階1〜3が済み。実験は [docs/EXPERIMENTS.md](docs/EXPERIMENTS.md)）
-- サイト: https://satou-aaaaa.github.io/gem-merchant-research/ （AI と対戦 `play.html`・遊び方 `rules.html`・コツ `tips.html`・クイズ `quiz.html`・データ `stats.html`。元は `web/`、`python scripts/build_pages.py` で `docs/` に写す）
+- サイト: https://satou-aaaaa.github.io/gem-merchant-research/ （AI と対戦 `play.html`・遊び方 `rules.html`・コツ `tips.html`・クイズ `quiz.html`・データ `stats.html`。英語版は `en/`。元は `web/`、`python scripts/build_pages.py` で `docs/` に写す）
 
 ## 準備
 

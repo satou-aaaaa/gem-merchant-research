@@ -74,7 +74,7 @@
   .card .cost span { display:inline-flex; align-items:center; gap:4px; font-size:12px; }
   .card .cost .gem { width:18px; height:18px; font-size:11px; }
   .card.can { box-shadow:0 0 0 2px var(--accent) inset; }
-  .card.can::after { content:"買える"; position:absolute; right:4px; bottom:3px; font-size:11px; color:var(--accent); font-weight:700; }
+  .card .canmark { position:absolute; right:4px; bottom:3px; font-size:11px; color:var(--accent); font-weight:700; }
   .card.can .cost { padding-bottom:16px; } /* 「買える」の字が値段に重ならないように */
   .card.empty { visibility:hidden; }
   .card.hint, .deck.hint, .gembtn.hint { box-shadow:0 0 0 3px var(--hint) inset; }
@@ -235,7 +235,7 @@
 <script>
 "use strict";
 const E = GemEngine;
-const COLOR_NAMES = ["白", "青", "緑", "赤", "黒", "金"];
+const COLOR_NAMES = [T("白"), T("青"), T("緑"), T("赤"), T("黒"), T("金")];
 const ME = "me", AI = "ai";
 const $ = (id) => document.getElementById(id);
 const STORE = "gem-play-v1";
@@ -251,30 +251,31 @@ function load() { try { return JSON.parse(localStorage.getItem(STORE) || "null")
 function gemEl(c, text) {
   const s = document.createElement("span");
   s.className = "gem c" + c;
-  s.textContent = text === undefined ? COLOR_NAMES[c] : text;
+  s.textContent = text === undefined ? (GEM_MARK ? GEM_MARK[c] : COLOR_NAMES[c]) : text;
+  if (GEM_MARK) s.title = COLOR_NAMES[c];
   return s;
 }
 
 function cardName(cid) {
   const c = E.CARDS[cid];
-  return `${COLOR_NAMES[c.color]}のカード（Lv${c.level}・${c.points}点）`;
+  return T("{0}のカード（Lv{1}・{2}点）", COLOR_NAMES[c.color], c.level, c.points);
 }
 
 function describe(s, a) {
   // 手を言葉にする（s は指す前の局面）
   let t;
-  if (a.kind === "take3") t = "宝石を取る: " + a.arg.map((c) => COLOR_NAMES[c]).join("・");
-  else if (a.kind === "take2") t = `宝石を取る: ${COLOR_NAMES[a.arg]}2つ`;
+  if (a.kind === "take3") t = T("宝石を取る: ") + a.arg.map((c) => COLOR_NAMES[c]).join(T("・"));
+  else if (a.kind === "take2") t = T("宝石を取る: {0}2つ", COLOR_NAMES[a.arg]);
   else if (a.kind === "reserve") {
     const [lv, i] = a.arg;
-    t = i < 0 ? `Lv${lv}の山札から伏せて予約` : `${cardName(s.board[lv][i])}を予約`;
+    t = i < 0 ? T("Lv{0}の山札から伏せて予約", lv) : T("{0}を予約", cardName(s.board[lv][i]));
   } else if (a.kind === "buy") {
     const cid = a.arg[0] === "board" ? s.board[a.arg[1]][a.arg[2]] : s.players[E.current(s)].reserved[a.arg[1]][0];
-    t = `${cardName(cid)}を買う` + (a.arg[0] === "reserved" ? "（予約札から）" : "");
-  } else t = "パス（指せる手がない）";
+    t = T("{0}を買う", cardName(cid)) + (a.arg[0] === "reserved" ? T("（予約札から）") : "");
+  } else t = T("パス（指せる手がない）");
   const r = a.ret.reduce((x, y) => x + y, 0);
-  if (r) t += "、" + a.ret.map((n, c) => (n ? COLOR_NAMES[c] + n : "")).filter(Boolean).join("・") + "を戻す";
-  if (a.noble >= 0) t += "、貴族が来た（+3点）";
+  if (r) t += T("、") + a.ret.map((n, c) => (n ? COLOR_NAMES[c] + n : "")).filter(Boolean).join(T("・")) + T("を戻す");
+  if (a.noble >= 0) t += T("、貴族が来た（+3点）");
   return t;
 }
 
@@ -290,7 +291,7 @@ function render() {
     const d = document.createElement("div");
     d.className = "pl " + (i === G.seat ? "me" : "ai") + (E.current(s) === i && !s.done ? " turn" : "") + (pending && pending.kind === "ai" && i !== G.seat ? " thinking" : "");
     const tok = p.tokens.reduce((x, y) => x + y, 0);
-    d.innerHTML = `<div class="top"><span>${i === G.seat ? "あなた" : "AI"}</span><b>${p.points}</b><small>点${i === 0 ? "・先手" : "・後手"}</small></div><span class="think">考え中…</span>`;
+    d.innerHTML = T("<div class=\"top\"><span>{0}</span><b>{1}</b><small>点{2}</small></div><span class=\"think\">考え中…</span>", i === G.seat ? T("あなた") : "AI", p.points, i === 0 ? T("・先手") : T("・後手"));
     const inv = document.createElement("div");
     inv.className = "inv";
     for (let c = 0; c < 6; c++) {
@@ -299,22 +300,22 @@ function render() {
       const n = document.createElement("span");
       n.className = "n";
       n.innerHTML = c < 5 ? `<b>${p.tokens[c]}</b><i>+${p.bonus[c]}</i>` : `<b>${p.tokens[c]}</b>`;
-      n.title = c < 5 ? `チップ${p.tokens[c]}枚・割引${p.bonus[c]}` : `金${p.tokens[c]}枚`;
+      n.title = c < 5 ? T("チップ{0}枚・割引{1}", p.tokens[c], p.bonus[c]) : T("金{0}枚", p.tokens[c]);
       cell.appendChild(n);
       inv.appendChild(cell);
     }
     d.appendChild(inv);
     const meta = document.createElement("div");
     meta.className = "meta";
-    meta.textContent = `チップ${tok}/10・予約${p.reserved.length}・カード${p.bought}・貴族${p.nobles.length}`;
-    meta.title = "色ごとの上の数がチップ、下の +数 がカードの割引";
+    meta.textContent = T("チップ{0}/10・予約{1}・カード{2}・貴族{3}", tok, p.reserved.length, p.bought, p.nobles.length);
+    meta.title = T("色ごとの上の数がチップ、下の +数 がカードの割引");
     d.appendChild(meta);
     pl.appendChild(d);
   });
   // 貴族
   const nb = $("nobles");
   nb.innerHTML = "";
-  if (!s.nobles.length) nb.innerHTML = '<span class="note">もう残っていない</span>';
+  if (!s.nobles.length) nb.innerHTML = T("<span class=\"note\">もう残っていない</span>");
   for (const n of s.nobles) {
     const d = document.createElement("div");
     d.className = "noble";
@@ -325,7 +326,7 @@ function render() {
       const sp = document.createElement("span");
       sp.className = "c" + c;
       sp.textContent = x;
-      sp.title = `${COLOR_NAMES[c]}の割引${x}枚`;
+      sp.title = T("{0}の割引{1}枚", COLOR_NAMES[c], x);
       need.appendChild(sp);
     });
     d.innerHTML = "<b>3</b>";
@@ -342,10 +343,10 @@ function render() {
     const deck = document.createElement("button");
     deck.className = "deck";
     deck.dataset.key = `deck${level}`;
-    deck.innerHTML = `<span>Lv${level}</span><b>${s.decks[level].length}</b><small>枚</small>`;
-    deck.setAttribute("aria-label", `レベル${level}の山札 ${s.decks[level].length}枚。押すと伏せて予約`);
+    deck.innerHTML = T("<span>Lv{0}</span><b>{1}</b><small>枚</small>", level, s.decks[level].length);
+    deck.setAttribute("aria-label", T("レベル{0}の山札 {1}枚。押すと伏せて予約", level, s.decks[level].length));
     deck.disabled = !myTurn || !s.decks[level].length || me.reserved.length >= E.MAX_RESERVED;
-    deck.onclick = () => chooseMain({ kind: "reserve", arg: [level, -1] }, `Lv${level}の山札から伏せて予約しますか？（金を1つもらえる）`);
+    deck.onclick = () => chooseMain({ kind: "reserve", arg: [level, -1] }, T("Lv{0}の山札から伏せて予約しますか？（金を1つもらえる）", level));
     row.appendChild(deck);
     s.board[level].forEach((cid, i) => {
       const b = cardEl(cid, myTurn);
@@ -364,14 +365,14 @@ function render() {
     b.dataset.key = `g${c}`;
     b.appendChild(gemEl(c));
     const sm = document.createElement("small");
-    sm.textContent = `${s.bank[c]}枚`;
+    sm.textContent = T("{0}枚", s.bank[c]);
     b.appendChild(sm);
     const pk = document.createElement("span");
     pk.className = "pick";
     const k = picked.filter((x) => x === c).length;
     pk.textContent = k ? `+${k}` : "";
     b.appendChild(pk);
-    b.setAttribute("aria-label", `${COLOR_NAMES[c]} 残り${s.bank[c]}枚` + (c === 5 ? "（金は予約でだけもらえる）" : ""));
+    b.setAttribute("aria-label", T("{0} 残り{1}枚", COLOR_NAMES[c], s.bank[c]) + (c === 5 ? T("（金は予約でだけもらえる）") : ""));
     b.disabled = c === 5 || !myTurn || s.bank[c] === 0;
     b.onclick = () => pickGem(c);
     bank.appendChild(b);
@@ -380,14 +381,14 @@ function render() {
   // 予約札
   const res = $("myRes");
   res.innerHTML = "";
-  if (!me.reserved.length) res.innerHTML = '<span class="none">まだない。予約すると、その札は相手に取られず、金も1つもらえる。</span>';
+  if (!me.reserved.length) res.innerHTML = T("<span class=\"none\">まだない。予約すると、その札は相手に取られず、金も1つもらえる。</span>");
   me.reserved.forEach(([cid, blind], i) => {
     const b = cardEl(cid, myTurn);
     b.dataset.key = `r${i}`;
     if (blind) {
       const m = document.createElement("span");
       m.className = "blindmark";
-      m.textContent = "伏せ";
+      m.textContent = T("伏せ");
       b.appendChild(m);
     }
     b.onclick = () => cardMenu({ where: "reserved", i, cid });
@@ -425,9 +426,12 @@ function cardEl(cid, myTurn) {
     cost.appendChild(sp);
   });
   b.appendChild(cost);
-  if (E.payment(me, cid) !== null) b.classList.add("can");
+  if (E.payment(me, cid) !== null) {
+    b.classList.add("can");
+    b.appendChild(Object.assign(document.createElement("span"), { className: "canmark", textContent: T("買える") }));
+  }
   b.disabled = !myTurn;
-  b.setAttribute("aria-label", cardName(cid) + "、値段 " + c.cost.map((x, k) => (x ? COLOR_NAMES[k] + x : "")).filter(Boolean).join("・"));
+  b.setAttribute("aria-label", cardName(cid) + T("、値段 ") + c.cost.map((x, k) => (x ? COLOR_NAMES[k] + x : "")).filter(Boolean).join(T("・")));
   return b;
 }
 
@@ -437,7 +441,7 @@ function renderLog() {
   for (const e of G.log) {
     const li = document.createElement("li");
     li.className = e.who;
-    li.textContent = (e.who === ME ? "あなた: " : "AI: ") + e.text;
+    li.textContent = (e.who === ME ? T("あなた: ") : "AI: ") + e.text;
     ol.appendChild(li);
   }
   ol.scrollTop = ol.scrollHeight;
@@ -447,18 +451,18 @@ function renderStatus() {
   const st = $("status");
   const s = G.s;
   st.classList.toggle("busy", !!pending);
-  if (s.done) st.textContent = "対局が終わりました。";
-  else if (pending && pending.kind === "ai") st.textContent = "AI が考えています…";
-  else if (pending && pending.kind === "hint") st.textContent = "ヒントを考えています…";
+  if (s.done) st.textContent = T("対局が終わりました。");
+  else if (pending && pending.kind === "ai") st.textContent = T("AI が考えています…");
+  else if (pending && pending.kind === "hint") st.textContent = T("ヒントを考えています…");
   else if (E.current(s) === G.seat) {
     const last = s.players.some((p) => p.points >= E.WIN_POINTS);
-    st.textContent = "あなたの番です。" + (last ? "（最後の手番）" : "");
+    st.textContent = T("あなたの番です。") + (last ? T("（最後の手番）") : "");
   } else st.textContent = "";
 }
 
 function setEval(pMe) {
   $("evalBar").firstElementChild.style.width = Math.round(pMe * 100) + "%";
-  $("evalTxt").textContent = `あなたの勝つ見込み 約${Math.round(pMe * 100)}%（AI の見立て。探索の結果なので目安）`;
+  $("evalTxt").textContent = T("あなたの勝つ見込み 約{0}%（AI の見立て。探索の結果なので目安）", Math.round(pMe * 100));
 }
 
 // ---------- 人の手 ----------
@@ -493,8 +497,8 @@ function updateTake() {
   $("btnClear").disabled = !picked.length;
   const avail = [0, 1, 2, 3, 4].filter((c) => G.s.bank[c] > 0).length;
   let info = "";
-  if (!picked.length) info = E.current(G.s) === G.seat && !G.s.done ? "色を押して選ぶ（同じ色を2回押すと2つ）" : "";
-  else if (!ok) info = picked.length < Math.min(3, avail) ? `あと${Math.min(3, avail) - picked.length}色` : "この取り方はできない";
+  if (!picked.length) info = E.current(G.s) === G.seat && !G.s.done ? T("色を押して選ぶ（同じ色を2回押すと2つ）") : "";
+  else if (!ok) info = picked.length < Math.min(3, avail) ? T("あと{0}色", Math.min(3, avail) - picked.length) : T("この取り方はできない");
   $("takeInfo").textContent = info;
 }
 
@@ -505,18 +509,18 @@ function cardMenu(o) {
   const buyArg = o.where === "board" ? ["board", o.level, o.i] : ["reserved", o.i];
   const pay = E.payment(me, o.cid);
   if (pay) {
-    const txt = pay.map((n, c) => (n ? COLOR_NAMES[c] + n : "")).filter(Boolean).join("・") || "ただ（割引だけで買える）";
-    opts.push({ label: `買う（払う: ${txt}）`, primary: true, fn: () => chooseMain({ kind: "buy", arg: buyArg }) });
+    const txt = pay.map((n, c) => (n ? COLOR_NAMES[c] + n : "")).filter(Boolean).join(T("・")) || T("ただ（割引だけで買える）");
+    opts.push({ label: T("買う（払う: {0}）", txt), primary: true, fn: () => chooseMain({ kind: "buy", arg: buyArg }) });
   } else {
     const need = E.effectiveCost(me, o.cid);
     const short = need.reduce((t, n, c) => t + Math.max(0, n - me.tokens[c]), 0) - me.tokens[5];
-    opts.push({ label: `まだ買えない（あと${short}つ足りない）`, disabled: true });
+    opts.push({ label: T("まだ買えない（あと{0}つ足りない）", short), disabled: true });
   }
   if (o.where === "board") {
     const can = me.reserved.length < E.MAX_RESERVED;
-    opts.push({ label: can ? "予約する（金を1つもらう" + (s.bank[5] ? "）" : "…が金はもう無い）") : "予約はもう3枚", disabled: !can, fn: () => chooseMain({ kind: "reserve", arg: [o.level, o.i] }) });
+    opts.push({ label: can ? T("予約する（金を1つもらう") + (s.bank[5] ? T("）") : T("…が金はもう無い）")) : T("予約はもう3枚"), disabled: !can, fn: () => chooseMain({ kind: "reserve", arg: [o.level, o.i] }) });
   }
-  opts.push({ label: "やめる", fn: () => {} });
+  opts.push({ label: T("やめる"), fn: () => {} });
   showDialog(cardName(o.cid), "", opts);
 }
 
@@ -526,7 +530,7 @@ function chooseMain(main, confirmText) {
     if (!acts.length) return;
     chooseRet(acts, (acts2) => chooseNoble(acts2, (a) => humanPlay(a)));
   };
-  if (confirmText) showDialog("確かめ", confirmText, [{ label: "はい", primary: true, fn: run }, { label: "やめる", fn: () => {} }]);
+  if (confirmText) showDialog(T("確かめ"), confirmText, [{ label: T("はい"), primary: true, fn: run }, { label: T("やめる"), fn: () => {} }]);
   else run();
 }
 
@@ -545,23 +549,23 @@ function chooseRet(acts, next) {
   const body = document.createElement("div");
   const p = document.createElement("p");
   p.className = "note";
-  p.textContent = `チップが${E.MAX_TOKENS}枚を超えるので、${total}枚を場に戻します。戻す色を選んでください。`;
+  p.textContent = T("チップが{0}枚を超えるので、{1}枚を場に戻します。戻す色を選んでください。", E.MAX_TOKENS, total);
   body.appendChild(p);
   const grid = document.createElement("div");
   grid.className = "retgrid";
   body.appendChild(grid);
-  const okBtn = { label: "戻す", primary: true, fn: () => next(acts.filter((a) => a.ret.join(",") === ret.join(","))), keepOpen: false };
+  const okBtn = { label: T("戻す"), primary: true, fn: () => next(acts.filter((a) => a.ret.join(",") === ret.join(","))), keepOpen: false };
   const draw = () => {
     grid.innerHTML = "";
     for (let c = 0; c < 6; c++) {
       const cell = document.createElement("div");
       cell.appendChild(gemEl(c));
       const n = document.createElement("div");
-      n.textContent = `${tokens[c] - ret[c]}枚`;
+      n.textContent = T("{0}枚", tokens[c] - ret[c]);
       cell.appendChild(n);
       const up = document.createElement("button");
-      up.textContent = `戻す ${ret[c]}`;
-      up.setAttribute("aria-label", `${COLOR_NAMES[c]}を1つ戻す（今${ret[c]}）`);
+      up.textContent = T("戻す {0}", ret[c]);
+      up.setAttribute("aria-label", T("{0}を1つ戻す（今{1}）", COLOR_NAMES[c], ret[c]));
       up.disabled = ret[c] >= tokens[c];
       up.onclick = () => {
         const sum = ret.reduce((x, y) => x + y, 0);
@@ -570,7 +574,7 @@ function chooseRet(acts, next) {
         draw();
       };
       const dn = document.createElement("button");
-      dn.textContent = "減らす";
+      dn.textContent = T("減らす");
       dn.disabled = ret[c] === 0;
       dn.onclick = () => { ret[c]--; draw(); };
       cell.appendChild(up);
@@ -581,7 +585,7 @@ function chooseRet(acts, next) {
     const btn = $("dlgOpts").querySelector("button.primary");
     if (btn) btn.disabled = sum !== total;
   };
-  showDialog("チップを戻す", body, [okBtn, { label: "やめる", fn: () => {} }]);
+  showDialog(T("チップを戻す"), body, [okBtn, { label: T("やめる"), fn: () => {} }]);
   draw();
 }
 
@@ -595,8 +599,8 @@ function afterMainTokens(a) {
 function chooseNoble(acts, next) {
   const nobles = [...new Set(acts.map((a) => a.noble))];
   if (nobles.length === 1) return next(acts[0]);
-  showDialog("どの貴族を迎えますか？", "条件を満たした貴族が2人以上います（1人だけ来ます）。", nobles.map((n) => ({
-    label: "貴族（" + E.NOBLES[n].need.map((x, c) => (x ? COLOR_NAMES[c] + x : "")).filter(Boolean).join("・") + "）",
+  showDialog(T("どの貴族を迎えますか？"), T("条件を満たした貴族が2人以上います（1人だけ来ます）。"), nobles.map((n) => ({
+    label: T("貴族（") + E.NOBLES[n].need.map((x, c) => (x ? COLOR_NAMES[c] + x : "")).filter(Boolean).join(T("・")) + T("）"),
     fn: () => next(acts.find((a) => a.noble === n)),
   })));
 }
@@ -614,7 +618,7 @@ function humanPlay(a) {
 function ensureWorker() {
   if (worker) return worker;
   try {
-    worker = new Worker("play_worker.js");
+    worker = new Worker(GEM_BASE + "play_worker.js");
     worker.onmessage = (e) => onWorker(e.data);
   } catch (e) {
     worker = null; // ファイルを直に開いたときなど。ページの中で考える
@@ -677,16 +681,16 @@ function showResult() {
   const r = E.result(s);
   const me = s.players[G.seat], ai = s.players[1 - G.seat];
   const box = $("result");
-  const head = r < 0 ? "引き分け" : r === G.seat ? "あなたの勝ち！" : "AI の勝ち";
+  const head = r < 0 ? T("引き分け") : r === G.seat ? T("あなたの勝ち！") : T("AI の勝ち");
   box.hidden = false;
-  box.innerHTML = `<b>${head}</b><div>あなた ${me.points}点（カード${me.bought}枚） 対 AI ${ai.points}点（カード${ai.bought}枚）</div>`;
+  box.innerHTML = T("<b>{0}</b><div>あなた {1}点（カード{2}枚） 対 AI {3}点（カード{4}枚）</div>", head, me.points, me.bought, ai.points, ai.bought);
   const p = document.createElement("p");
   p.className = "note";
-  p.textContent = r === G.seat && G.level !== "max" ? "次はもう一段強い AI に挑戦してみましょう。" : "ヒントで AI の考えを見ながら指すと、強い手の形がつかめます。";
+  p.textContent = r === G.seat && G.level !== "max" ? T("次はもう一段強い AI に挑戦してみましょう。") : T("ヒントで AI の考えを見ながら指すと、強い手の形がつかめます。");
   box.appendChild(p);
   const btn = document.createElement("button");
   btn.className = "primary";
-  btn.textContent = "もう一局";
+  btn.textContent = T("もう一局");
   btn.onclick = newGame;
   box.appendChild(btn);
 }
@@ -703,18 +707,18 @@ function showHint(d) {
   hintFor = s.turn;
   setEval(d.value);
   const box = $("hintBox");
-  box.innerHTML = "<b>AI ならこう指す（よく読んだ順）</b>";
+  box.innerHTML = T("<b>AI ならこう指す（よく読んだ順）</b>");
   const ol = document.createElement("ol");
   for (const st of d.stats.slice(0, 3)) {
     const li = document.createElement("li");
-    const v = st.value == null ? "" : `（勝つ見込み 約${Math.round(st.value * 100)}%）`;
+    const v = st.value == null ? "" : T("（勝つ見込み 約{0}%）", Math.round(st.value * 100));
     li.textContent = describe(s, st.action) + v;
     ol.appendChild(li);
   }
   box.appendChild(ol);
   const note = document.createElement("p");
   note.className = "note";
-  note.textContent = "紫の枠が1番目の手です。見込みは AI の探索での目安です。";
+  note.textContent = T("紫の枠が1番目の手です。見込みは AI の探索での目安です。");
   box.appendChild(note);
   render();
   const a = d.stats[0].action;
@@ -741,7 +745,7 @@ function newGame() {
   clearHint();
   $("result").hidden = true;
   $("evalBar").firstElementChild.style.width = "50%";
-  $("evalTxt").textContent = "AI が考えると、あなたの勝つ見込みが出ます。";
+  $("evalTxt").textContent = T("AI が考えると、あなたの勝つ見込みが出ます。");
   afterMove();
 }
 

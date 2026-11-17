@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en" data-base="../">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How to play | Gem Merchant's Workshop</title>
+<meta name="description" content="How to play Gem Merchant's Workshop (a 2-player gem card game): the 4 things you can do on a turn, discounts, nobles, and how the game ends.">
+<link rel="stylesheet" href="../site.css">
+<script src="../i18n_en.js"></script>
+<script src="../i18n.js"></script>
+</head>
+<body>
+<header>
+  <a class="brand" href="index.html">Gem Merchant's Workshop</a>
+  <nav aria-label="Site"><a href="index.html">Home</a><a href="play.html">Play the AI</a><a href="rules.html" aria-current="page">How to play</a><a href="tips.html">Tips</a><a href="quiz.html">Quiz</a><a href="stats.html">Data</a><a href="../rules.html" data-lang="ja" lang="ja" hreflang="ja">日本語</a></nav>
+</header>
+<main>
+  <h1>How to play</h1>
+  <p class="lead">Reaching 15 points first matters, but you can't buy expensive cards right away. Build discounts with cheap cards, then work up to costlier ones: that is the flow of the game.</p>
+
+  <h2>Components</h2>
+  <ul>
+    <li>Gem chips in 5 colors (<span class="gem c0" title="White">W</span> <span class="gem c1" title="Blue">Bu</span> <span class="gem c2" title="Green">G</span> <span class="gem c3" title="Red">R</span> <span class="gem c4" title="Black">Bk</span>) ×4 each, and gold, which stands in for any color, <span class="gem c5" title="Gold">Au</span>  ×5.</li>
+    <li>90 cards (40 level 1, 30 level 2, 20 level 3). Lay 4 of each level face up; the rest form the decks.</li>
+    <li>3 nobles (out of 10).</li>
+  </ul>
+
+  <h2>What you can do on a turn (pick one)</h2>
+  <div class="tablewrap"><table>
+    <tr><th>What to do</th><th>Contents</th></tr>
+    <tr><td>Take 3 different colors</td><td>One gem each of 3 different colors from the bank. If 2 or fewer colors remain, take what there is.</td></tr>
+    <tr><td>Take 2 of one color</td><td>Only if that color has 4 or more before taking.</td></tr>
+    <tr><td>Reserve</td><td>Take a face-up card or the top card of a deck (face down) into your hand and get 1 gold. Up to 3 reserves. Only you can buy a reserved card.</td></tr>
+    <tr><td>Buy</td><td>One card from the board or your reserves. Pay its cost to the bank; gold can cover any shortfall.</td></tr>
+  </table></div>
+
+  <h2>Discounts (the heart of the game)</h2>
+  <p>A card you buy counts as a 1-gem discount in its color for the rest of the game. For example, with 2 <span class="gem c1" title="Blue">Bu</span>  cards, every card's blue cost is 2 cheaper. The more discounts you have, the fewer turns you spend collecting chips, and the sooner you reach high-value cards.</p>
+
+  <h2>10 chips max</h2>
+  <p>If you have more than 10 chips (gold included) at the end of your turn, return any you like to the bank to get down to 10.</p>
+
+  <h2>Nobles</h2>
+  <p>Each noble asks for a set number of discounts in certain colors. If you meet it at the end of your turn, that noble visits for 3 points. It costs no action. Only one visits per turn, and you can't refuse.</p>
+
+  <h2>End of game and winner</h2>
+  <p>If anyone has 15 or more points at the end of a turn, finish the round (through the second player's turn) and the game ends. Most points wins. On a tie, whoever bought fewer cards wins.</p>
+
+  <h2>Tips for beginners</h2>
+  <ul>
+    <li>Start by building discounts with cheap level 1 cards. Even with 0 points, a discount lasts all game.</li>
+    <li>Don't pile up one color; build discounts in the colors expensive cards need.</li>
+    <li>If your opponent is one move from buying an expensive card, you can reserve it to block them.</li>
+  </ul>
+  <p><a class="cta" href="play.html">Try playing the AI</a></p>
+  <p class="note">The text on this page was written for this site. The numbers in the rules match the official 2-player rules of the existing gem card game. Details the rules don't cover (such as passing when no gems can be taken) are explained in the <a href="https://github.com/satou-aaaaa/gem-merchant-research/blob/main/src/gem_merchant/game.py">engine notes</a> .</p>
+</main>
+<footer>Gem Merchant's Workshop</footer>
+</body>
+</html>

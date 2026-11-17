@@ -543,10 +543,10 @@
   // 強さの段: 名前 → 手を選ぶ関数
   const LEVELS = {
     // iterations 0 は greedy（1手先だけを見る）。強い・最強は PC で約1秒・約4秒（スマホはその2〜3倍）
-    easy: { label: "やさしい", iterations: 0 },
-    normal: { label: "ふつう", iterations: 600 },
-    strong: { label: "強い", iterations: 5000 },
-    max: { label: "最強", iterations: 20000 },
+    easy: { iterations: 0 },
+    normal: { iterations: 600 },
+    strong: { iterations: 5000 },
+    max: { iterations: 20000 },
   };
 
   function aiAct(s, level, seed) {
