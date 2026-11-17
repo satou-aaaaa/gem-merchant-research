@@ -4,11 +4,14 @@
     py scripts/build_pages.py --check   # docs/ が web/ と同じかだけを見る（違えば終了コード 1。check.py が使う）
 
 ページを直すときは web/ の方を直してから、これで docs/ を作り直す（docs/*.html を直に直さない）。
+集計から組み立てるページ（stats.html）は web/<名前>_template.html の {{名前}} を埋めて作る。
 """
 
 from __future__ import annotations
 
 import argparse
+import json
+import re
 import sys
 from pathlib import Path
 
@@ -18,8 +21,24 @@ DOCS = ROOT / "docs"
 FILES = ["index.html", "play.html", "rules.html", "site.css", "gem_engine.js", "play_worker.js"]
 
 
+def fill(template: str, values: dict[str, str]) -> str:
+    def rep(m: re.Match) -> str:
+        if m.group(1) not in values:
+            raise SystemExit(f"テンプレートの {{{{{m.group(1)}}}}} に入れる値が無い")
+        return values[m.group(1)]
+
+    return re.sub(r"\{\{(\w+)\}\}", rep, template)
+
+
 def built() -> dict[str, str]:
-    return {name: (WEB / name).read_text(encoding="utf-8") for name in FILES}
+    out = {name: (WEB / name).read_text(encoding="utf-8") for name in FILES}
+    sys.path.insert(0, str(ROOT / "scripts"))
+    import stats_page
+
+    stats = json.loads((ROOT / "data" / "stats.json").read_text(encoding="utf-8"))
+    tpl = (WEB / "stats_template.html").read_text(encoding="utf-8")
+    out["stats.html"] = fill(tpl, stats_page.render(stats))
+    return out
 
 
 def main() -> None:
