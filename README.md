@@ -5,7 +5,8 @@
 姉妹プロジェクト: [carcassonne-research](https://github.com/satou-aaaaa/carcassonne-research)（仕組みの多くをここから写す）。
 
 - 調べたこと: [docs/RESEARCH.md](docs/RESEARCH.md)
-- 進め方: [docs/ROADMAP.md](docs/ROADMAP.md)（段階1・2が済み、段階3は AI まで。実験は [docs/EXPERIMENTS.md](docs/EXPERIMENTS.md)）
+- 進め方: [docs/ROADMAP.md](docs/ROADMAP.md)（段階1〜3が済み。実験は [docs/EXPERIMENTS.md](docs/EXPERIMENTS.md)）
+- サイト: https://satou-aaaaa.github.io/gem-merchant-research/ （AI と対戦 `play.html`・遊び方 `rules.html`。元は `web/`、`python scripts/build_pages.py` で `docs/` に写す）
 
 ## 準備
 
