@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>遊び方 | 宝石商の工房</title>
+<meta name="description" content="宝石商の工房（2人用の宝石カードゲーム）の遊び方。手番でできる4つのこと、割引、貴族、終わり方。">
+<link rel="stylesheet" href="site.css">
+</head>
+<body>
+<header>
+  <a class="brand" href="index.html">宝石商の工房</a>
+  <nav aria-label="サイト内"><a href="index.html">トップ</a><a href="play.html">AI と対戦</a><a href="rules.html" aria-current="page">遊び方</a></nav>
+</header>
+<main>
+  <h1>遊び方</h1>
+  <p class="lead">先に15点に届いた方が有利。でも、いきなり点の高いカードは買えません。安いカードで割引を増やし、だんだん高いカードに手を伸ばすのがこのゲームの流れです。</p>
+
+  <h2>道具</h2>
+  <ul>
+    <li>宝石のチップ5色（<span class="gem c0">白</span> <span class="gem c1">青</span> <span class="gem c2">緑</span> <span class="gem c3">赤</span> <span class="gem c4">黒</span>）を各4枚と、何色の代わりにもなる金 <span class="gem c5">金</span> を5枚。</li>
+    <li>カード90枚（レベル1が40枚・レベル2が30枚・レベル3が20枚）。各レベル4枚ずつ表向きに並べ、残りは山札。</li>
+    <li>貴族3枚（全10枚から）。</li>
+  </ul>
+
+  <h2>手番でできること（どれか1つ）</h2>
+  <div class="tablewrap"><table>
+    <tr><th>やること</th><th>中身</th></tr>
+    <tr><td>違う色を3つ取る</td><td>場から違う色の宝石を1つずつ、3色。残りが2色以下なら、あるだけ。</td></tr>
+    <tr><td>同じ色を2つ取る</td><td>取る前にその色が4枚以上あるときだけ。</td></tr>
+    <tr><td>予約する</td><td>表向きのカードか、山札の一番上（伏せたまま）を手元に取っておき、金を1つもらう。予約は3枚まで。予約した札は自分だけが買える。</td></tr>
+    <tr><td>買う</td><td>場か自分の予約札から1枚。値段の宝石を場に払う。足りない分は金で払える。</td></tr>
+  </table></div>
+
+  <h2>割引（このゲームの心臓）</h2>
+  <p>買ったカードは、その色の宝石1つ分の割引として、ずっと使えます。たとえば <span class="gem c1">青</span> のカードを2枚持っていれば、どのカードの青の値段も2つ安くなります。割引が増えるほど、チップを集める手番が減り、点の高いカードに早く届きます。</p>
+
+  <h2>チップは10枚まで</h2>
+  <p>手番の終わりにチップ（金も含む）が10枚を超えていたら、好きなものを場に戻して10枚にします。</p>
+
+  <h2>貴族</h2>
+  <p>貴族は「この色の割引をこれだけ」という条件を持っています。手番の終わりに条件を満たしていれば、その貴族が来て3点。行動は使いません。1手番に来るのは1人だけで、断れません。</p>
+
+  <h2>終わりと勝ち負け</h2>
+  <p>手番の終わりにだれかが15点以上なら、その一巡を最後まで指して（後手の手番まで）終わります。点の多い方の勝ち。同点なら、買ったカードが少ない方の勝ちです。</p>
+
+  <h2>はじめての人へのコツ</h2>
+  <ul>
+    <li>最初はレベル1の安いカードで割引を増やす。点が0でも割引は一生効きます。</li>
+    <li>同じ色ばかり集めず、高いカードの値段に合う色の割引を作る。</li>
+    <li>相手があと1手で買いそうな高いカードは、予約して止める手もあります。</li>
+  </ul>
+  <p><a class="cta" href="play.html">AI と対戦してみる</a></p>
+  <p class="note">このページの文章はこのサイトで書いたものです。ルールの数は既存の宝石カードゲームの公式ルール（2人用）と同じにしています。ルールに書いていない細部（取れる宝石が無いときのパスなど）の決め方は <a href="https://github.com/satou-aaaaa/gem-merchant-research/blob/main/src/gem_merchant/game.py">エンジンの説明</a> にあります。</p>
+</main>
+<footer>宝石商の工房</footer>
+</body>
+</html>

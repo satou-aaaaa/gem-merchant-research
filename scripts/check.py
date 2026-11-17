@@ -4,7 +4,7 @@
     py scripts/check.py --quick   # 時間のかかる強さの検証（@pytest.mark.slow）を飛ばす
     py scripts/check.py --fix     # 先に ruff の自動修正と整形をかけてから確認する
 
-公開ページを作り始めたら、作り直した docs/ がコミット済みと同じかを見る手順をここに足す。
+公開ページ（docs/）が web/ から作り直したものと同じかも見る（scripts/build_pages.py --check）。
 """
 
 from __future__ import annotations
@@ -38,6 +38,7 @@ def main() -> None:
         step("ruff 整形", [PY, "-m", "ruff", "format", "."])
     step("ruff", [PY, "-m", "ruff", "check", "."])
     step("ruff 整形の確認", [PY, "-m", "ruff", "format", "--check", "."])
+    step("公開ページが最新か", [PY, "scripts/build_pages.py", "--check"])
     test = [PY, "-m", "pytest", "-q"] + (["-m", "not slow"] if args.quick else [])
     step("pytest" + ("（slow を除く）" if args.quick else ""), test)
     print("すべて通りました")

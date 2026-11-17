@@ -18,6 +18,12 @@ python scripts/check.py --quick   # ruff・整形・slow 以外のテスト
 
 このリポジトリだけの PR の決まりは `.claude/skills/steward/SKILL.md`（共通の手順より優先）。
 
+## 公開
+
+- GitHub Pages は `main` の `/docs` を公開する。ページの元は `web/`（`index.html`・`play.html`・`rules.html`・`site.css`・`gem_engine.js`・`play_worker.js`）。直したら `python scripts/build_pages.py` で docs/ に写す（`check.py` が古いと止まる）。
+- 対戦ページのエンジンと AI（`web/gem_engine.js`）は `game.py`・`agents.py` の JS 版。ルールや評価を Python で変えたら JS も直す（`tests/test_play_js.py` が毎手を照合）。
+- ページを変えたら毎回、スマホ幅とPC幅で UI を点検して直す（`node scripts/ui_check.mjs --shots ui-shots`、手順は `.claude/skills/ui-check/SKILL.md`）。CI の test.yml `ui` ジョブも同じ点検をする。
+
 ## 権利（必ず守る）
 
 - 元のゲームの名前・ロゴ・絵・ルールの文章を、コード・ページ・コミットの題に使わない。名前は「宝石商の工房」。カード90枚は自作（NOTICE.md）。

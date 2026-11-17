@@ -41,3 +41,27 @@ jobs:
           curl -sSfL "https://github.com/rhysd/actionlint/releases/download/v${VER}/actionlint_${VER}_linux_amd64.tar.gz" | tar xz actionlint
           command -v shellcheck
           ./actionlint -color .github/workflows/*.yml
+
+  # 公開ページ（docs/）をスマホ幅と PC 幅で開いて点検する（scripts/ui_check.mjs、手順は .claude/skills/ui-check/SKILL.md）
+  # carcassonne-research と同じ版: ubuntu-latest（26.04）では Playwright 1.56.1 が Chromium を入れられない
+  ui:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: "準備: Playwright と Chromium"
+        run: |
+          npm install --no-save --no-package-lock playwright@1.56.1
+          # ランナーの apt ミラーが名前解決に失敗することがあるので、間をおいて3回まで試す。
+          # それでもだめなら Chromium だけ入れて続ける（ubuntu-24.04 のイメージには動かすのに要るライブラリが入っている）
+          for i in 1 2 3; do
+            sudo apt-get update -o Acquire::Retries=3 || true
+            if npx playwright install --with-deps chromium; then exit 0; fi
+            echo "::warning::Playwright の依存パッケージを入れられませんでした（${i}回目）"
+            sleep $((i * 20))
+          done
+          npx playwright install chromium
+      - name: "確認: UI 点検（scripts/ui_check.mjs）"
+        run: node scripts/ui_check.mjs
