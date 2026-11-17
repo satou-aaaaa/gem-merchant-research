@@ -14,4 +14,5 @@ bash scripts/setup.sh                 # .venv を作って requirements.txt を�
 .venv/bin/python scripts/check.py --quick   # ruff・整形・テスト（Windows は .venv\Scripts\python）
 .venv/bin/python scripts/play_random.py      # ランダムな手どうしの対局で、終わり方・手数・手の候補の数を見る
 .venv/bin/python scripts/run_match.py mcts400 greedy --pairs 20   # 2つの AI を先後入れ替えで対戦させる
+.venv/bin/python scripts/run_match.py fmcts2000 greedy --pairs 50 --workers 4   # fmcts は MCTS の速い版（numba）
 ```

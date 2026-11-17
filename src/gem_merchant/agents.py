@@ -178,11 +178,15 @@ class MCTSAgent:
 
 
 def make_agent(name: str):
-    """名前から AI を作る: random / greedy / mcts<回数>（例 mcts400）。"""
+    """名前から AI を作る: random / greedy / mcts<回数>（例 mcts400）/ fmcts<回数>（速い版）。"""
     if name == "random":
         return RandomAgent()
     if name == "greedy":
         return GreedyAgent()
+    if name.startswith("fmcts"):
+        from .fast_mcts import FastMCTSAgent  # numba を使うので、使うときだけ読む
+
+        return FastMCTSAgent(int(name[5:] or 400))
     if name.startswith("mcts"):
         return MCTSAgent(int(name[4:] or 400))
     raise ValueError(f"知らない AI の名前: {name}")
