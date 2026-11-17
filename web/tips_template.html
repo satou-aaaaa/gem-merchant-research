@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>強い AI のコツ | 宝石商の工房</title>
+<meta name="description" content="強い AI どうしの対局の数字から分かった、宝石商の工房で勝つためのコツ。序盤は割引、終盤は点。">
+<link rel="stylesheet" href="site.css">
+<style>
+  .tip { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:4px 16px 8px; margin:14px 0; }
+  .tip h2 { border:0; margin:12px 0 4px; display:flex; gap:10px; align-items:baseline; }
+  .tip .no { display:inline-flex; align-items:center; justify-content:center; flex:none; width:28px; height:28px; border-radius:50%; background:var(--accent); color:#fff; font-size:15px; }
+</style>
+</head>
+<body>
+<header>
+  <a class="brand" href="index.html">宝石商の工房</a>
+  <nav aria-label="サイト内"><a href="index.html">トップ</a><a href="play.html">AI と対戦</a><a href="rules.html">遊び方</a><a href="tips.html" aria-current="page">コツ</a><a href="stats.html">データ</a></nav>
+</header>
+<main>
+  <h1>強い AI のコツ {{tip_count}}つ</h1>
+  <p class="lead">強い AI（{{agent}}）どうしの対局 {{games}}局の数字から分かったコツです。どのコツも数字で確かめてから載せています（数字は <a href="stats.html">データのページ</a>）。</p>
+  {{tips}}
+  <h2>次の一歩</h2>
+  <ul>
+    <li><a href="play.html">AI と対戦</a>して、ヒントボタンで AI の考えと見比べる。</li>
+    <li><a href="stats.html">データのページ</a>で、元の数字を見る。</li>
+  </ul>
+  <p class="note">AI が強くなったら数え直して作り直します。人の対局とは違うところもあります。</p>
+</main>
+<footer>宝石商の工房</footer>
+</body>
+</html>

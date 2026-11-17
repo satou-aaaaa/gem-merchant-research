@@ -158,3 +158,69 @@ def _meter(x: float | None, n: int = 0) -> str:
 def _barcell(v: float, vmax: float, label: str) -> str:
     w = 0 if vmax <= 0 else max(0.5, v / vmax * 100)
     return f'<span class="meter wide" title="{label}"><span style="width:{w:.0f}%"></span></span>{label}'
+
+
+def tips(s: dict) -> dict[str, str]:
+    """コツ集（tips.html）の本文。どのコツも集計で確かめ、成り立たないコツは出さない（check_claims と同じ考え方）。"""
+    L = {x["round"]: x for x in s["lead"]}
+    sw, sl = s["sources"]["winner"], s["sources"]["loser"]
+    bw, bl = s["buys"]["winner"], s["buys"]["loser"]
+    a = s["actions"]
+    l2 = sorted((p for p in s["patterns"] if p["level"] == 2), key=lambda p: -p["per_game"])
+    items: list[tuple[str, str]] = []
+    if L[10]["cards"] > L[10]["points"] and L[25]["points"] > L[25]["cards"]:
+        items.append((
+            "序盤はカード（割引）、終盤は点",
+            (f"10ラウンド目にカードの多い方が勝った割合は {pct(L[10]['cards'])}、点の多い方は {pct(L[10]['points'])}。"
+            f"25ラウンド目には逆に、点の多い方 {pct(L[25]['points'])}・カードの多い方 {pct(L[25]['cards'])}。"
+            "はじめは0点のカードでも割引を増やし、相手が15点に近づいたら点の取れる手に切り替えましょう。"),
+        ))  # fmt: skip
+    if max(sw, key=sw.get) == "L2":
+        items.append((
+            "点の柱はレベル2のカード",
+            (f"勝った人の {s['points']['winner']:.1f}点のうち {sw['L2']:.1f}点がレベル2のカードから。"
+            f"AI がいちばんよく買うのは「{l2[0]['label']}」の形です。"
+            "割引が3〜4色そろったら、レベル2を続けて買える形を目指します。"),
+        ))  # fmt: skip
+    if bw["L3"] >= 1.5 * bl["L3"] and sw["L3"] > sl["L3"]:
+        items.append((
+            "レベル3は勝負を決める1枚",
+            (f"レベル3のカードを買った枚数は、勝った人 {bw['L3']:.1f}枚・負けた人 {bl['L3']:.1f}枚。"
+            f"レベル1は {bw['L1']:.1f}枚と {bl['L1']:.1f}枚で差がありません。"
+            "終盤に割引で安くなったレベル3を1枚買えるかが勝ち負けを分けます。"),
+        ))  # fmt: skip
+    if a["reserved_bought_share"] >= 0.3 and a["blind_share"] < 0.25:
+        items.append((
+            "予約は「あとで買う札」を押さえるために",
+            (f"AI は1局に1人 {a['reserve_per_game']:.1f}回予約し、その {pct(a['reserved_bought_share'])} をあとで買っています。"
+            f"山札から伏せて予約するのは {pct(a['blind_share'])} だけ。"
+            "見えている札の中から、割引がそろえば買える札を予約し、金ももらう使い方が中心です。"),
+        ))  # fmt: skip
+    if a["take2_share"] < 0.2:
+        items.append((
+            "宝石は基本、違う色を3つ",
+            (f"宝石を取る手のうち、同じ色を2つ取るのは {pct(a['take2_share'])}。"
+            "1手で3つ取れる方が得なので、同じ色2つは「その色だけあと2つ足りない」ときの手です。"),
+        ))  # fmt: skip
+    if s["nobles"]["winner"] < 1 and sw.get("noble", 0) < sw["L2"]:
+        items.append((
+            "貴族はねらうより、ついでに",
+            (f"勝った人に貴族が来た数は平均 {s['nobles']['winner']:.2f}人（負けた人 {s['nobles']['loser']:.2f}人）、点にして {sw.get('noble', 0):.1f}点。"
+            "貴族のために割引の色をそろえるより、買いたいカードの割引が結果として貴族の条件に近づく形が強い指し方です。"),
+        ))  # fmt: skip
+    if a["return_share"] < 0.2:
+        items.append((
+            "チップを抱えすぎない",
+            (f"10枚を超えてチップを戻した手番は {pct(a['return_share'])}。"
+            "戻すと1手分の宝石がむだになるので、9〜10枚になったら買う・予約する手に切り替えます。"),
+        ))  # fmt: skip
+    html = "".join(
+        f'<section class="tip"><h2><span class="no">{i}</span>{escape(h)}</h2><p>{escape(b)}</p></section>'
+        for i, (h, b) in enumerate(items, 1)
+    )
+    return {
+        "tips": html,
+        "tip_count": str(len(items)),
+        "games": f"{s['games']:,}",
+        "agent": escape(s["agent"]),
+    }

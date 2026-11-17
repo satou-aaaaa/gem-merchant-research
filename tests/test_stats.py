@@ -28,3 +28,14 @@ def test_page_values_cover_template():
     import re
 
     assert set(re.findall(r"\{\{(\w+)\}\}", tpl)) <= set(vals)
+
+
+def test_tips_are_backed_by_numbers():
+    """コツ集のコツは集計で確かめたものだけ。今の集計では7つとも成り立つ（減ったら本文を見直す）。"""
+    saved = json.loads((ROOT / "data" / "stats.json").read_text(encoding="utf-8"))
+    vals = stats_page.tips(saved)
+    assert vals["tip_count"] == "7"
+    tpl = (ROOT / "web" / "tips_template.html").read_text(encoding="utf-8")
+    import re
+
+    assert set(re.findall(r"\{\{(\w+)\}\}", tpl)) <= set(vals)

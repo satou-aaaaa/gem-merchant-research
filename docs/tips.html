@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>強い AI のコツ | 宝石商の工房</title>
+<meta name="description" content="強い AI どうしの対局の数字から分かった、宝石商の工房で勝つためのコツ。序盤は割引、終盤は点。">
+<link rel="stylesheet" href="site.css">
+<style>
+  .tip { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:4px 16px 8px; margin:14px 0; }
+  .tip h2 { border:0; margin:12px 0 4px; display:flex; gap:10px; align-items:baseline; }
+  .tip .no { display:inline-flex; align-items:center; justify-content:center; flex:none; width:28px; height:28px; border-radius:50%; background:var(--accent); color:#fff; font-size:15px; }
+</style>
+</head>
+<body>
+<header>
+  <a class="brand" href="index.html">宝石商の工房</a>
+  <nav aria-label="サイト内"><a href="index.html">トップ</a><a href="play.html">AI と対戦</a><a href="rules.html">遊び方</a><a href="tips.html" aria-current="page">コツ</a><a href="stats.html">データ</a></nav>
+</header>
+<main>
+  <h1>強い AI のコツ 7つ</h1>
+  <p class="lead">強い AI（fmcts2000）どうしの対局 1,000局の数字から分かったコツです。どのコツも数字で確かめてから載せています（数字は <a href="stats.html">データのページ</a>）。</p>
+  <section class="tip"><h2><span class="no">1</span>序盤はカード（割引）、終盤は点</h2><p>10ラウンド目にカードの多い方が勝った割合は 68%、点の多い方は 54%。25ラウンド目には逆に、点の多い方 74%・カードの多い方 61%。はじめは0点のカードでも割引を増やし、相手が15点に近づいたら点の取れる手に切り替えましょう。</p></section><section class="tip"><h2><span class="no">2</span>点の柱はレベル2のカード</h2><p>勝った人の 15.6点のうち 9.1点がレベル2のカードから。AI がいちばんよく買うのは「2点・宝石7個（4＋2＋1）」の形です。割引が3〜4色そろったら、レベル2を続けて買える形を目指します。</p></section><section class="tip"><h2><span class="no">3</span>レベル3は勝負を決める1枚</h2><p>レベル3のカードを買った枚数は、勝った人 1.0枚・負けた人 0.4枚。レベル1は 6.1枚と 6.1枚で差がありません。終盤に割引で安くなったレベル3を1枚買えるかが勝ち負けを分けます。</p></section><section class="tip"><h2><span class="no">4</span>予約は「あとで買う札」を押さえるために</h2><p>AI は1局に1人 5.0回予約し、その 48% をあとで買っています。山札から伏せて予約するのは 8% だけ。見えている札の中から、割引がそろえば買える札を予約し、金ももらう使い方が中心です。</p></section><section class="tip"><h2><span class="no">5</span>宝石は基本、違う色を3つ</h2><p>宝石を取る手のうち、同じ色を2つ取るのは 8%。1手で3つ取れる方が得なので、同じ色2つは「その色だけあと2つ足りない」ときの手です。</p></section><section class="tip"><h2><span class="no">6</span>貴族はねらうより、ついでに</h2><p>勝った人に貴族が来た数は平均 0.51人（負けた人 0.11人）、点にして 1.5点。貴族のために割引の色をそろえるより、買いたいカードの割引が結果として貴族の条件に近づく形が強い指し方です。</p></section><section class="tip"><h2><span class="no">7</span>チップを抱えすぎない</h2><p>10枚を超えてチップを戻した手番は 12%。戻すと1手分の宝石がむだになるので、9〜10枚になったら買う・予約する手に切り替えます。</p></section>
+  <h2>次の一歩</h2>
+  <ul>
+    <li><a href="play.html">AI と対戦</a>して、ヒントボタンで AI の考えと見比べる。</li>
+    <li><a href="stats.html">データのページ</a>で、元の数字を見る。</li>
+  </ul>
+  <p class="note">AI が強くなったら数え直して作り直します。人の対局とは違うところもあります。</p>
+</main>
+<footer>宝石商の工房</footer>
+</body>
+</html>
