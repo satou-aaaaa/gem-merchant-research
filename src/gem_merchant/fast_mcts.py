@@ -105,6 +105,96 @@ def player_value(s, i):
     return v
 
 
+# --- 重みつきの評価（R-004 自己対戦で学ぶ） ---
+# 1人分の特徴（手作りの評価の項を分けたもの＋2つ）。手作りの評価は HAND_WEIGHTS をかけた和と同じ。
+FEATURES = (
+    "点",
+    "割引の数",
+    "宝石チップの数",
+    "金チップの数",
+    "貴族の近さ",
+    "買えそうな札の上位3つ",
+    "割引の色の数",
+    "予約の数",
+)
+N_FEAT = len(FEATURES)
+PHASE_TURNS = 60  # 手番の数。0 で序盤の重み、これ以降は終盤の重み、間は直線でまぜる
+HAND_WEIGHTS = np.array([[1.0, 0.8, 0.1, 0.2, 3.0, 0.5, 0.0, 0.0]] * 2, dtype=np.float64)
+
+
+@njit(cache=True)
+def features(s, i, out):
+    """i 番の人の特徴を out（長さ N_FEAT）に書く。"""
+    b = PL[i]
+    for k in range(N_FEAT):
+        out[k] = 0.0
+    out[0] = s[b + P_PTS]
+    for c in range(5):
+        out[1] += s[b + P_BON + c]
+        out[2] += s[b + P_TOK + c]
+        if s[b + P_BON + c] > 0:
+            out[6] += 1.0
+    out[3] = s[b + P_TOK + 5]
+    for k in range(s[NOBN]):
+        nid = s[NOB + k]
+        need = 0
+        for c in range(5):
+            x = NOBLE_NEED[nid, c] - s[b + P_BON + c]
+            if x > 0:
+                need += x
+        out[4] += 1.0 / (1 + need) ** 1.5
+    t1 = t2 = t3 = 0.0
+    for j in range(12 + s[b + P_RESN]):
+        cid = s[BOARD + j] if j < 12 else s[b + P_RES + j - 12]
+        if cid < 0:
+            continue
+        x = (CARD_POINTS[cid] + 0.8) / (1 + _shortfall(s, b, cid))
+        if x > t1:
+            t1, t2, t3 = x, t1, t2
+        elif x > t2:
+            t2, t3 = x, t2
+        elif x > t3:
+            t3 = x
+    out[5] = t1 + t2 + t3
+    out[7] = s[b + P_RESN]
+
+
+@njit(cache=True)
+def phase(s):
+    """序盤 0 → 終盤 1。"""
+    return min(1.0, s[TURN] / PHASE_TURNS)
+
+
+@njit(cache=True)
+def diff_features(s, i, out):
+    """学習の入力（長さ 2*N_FEAT）: i 番から見た特徴の差を、序盤・終盤の重みに分けたもの。"""
+    f0 = np.empty(N_FEAT)
+    f1 = np.empty(N_FEAT)
+    features(s, i, f0)
+    features(s, 1 - i, f1)
+    a = phase(s)
+    for k in range(N_FEAT):
+        d = f0[k] - f1[k]
+        out[k] = (1.0 - a) * d
+        out[N_FEAT + k] = a * d
+
+
+@njit(cache=True)
+def evaluate_w(s, i, w):
+    """evaluate の重みつき版。w は (2, N_FEAT)。HAND_WEIGHTS なら evaluate と同じ値。"""
+    if s[DONE]:
+        r = result(s)
+        if r < 0:
+            return 0.5
+        return 1.0 if r == i else 0.0
+    x = np.empty(2 * N_FEAT)
+    diff_features(s, i, x)
+    d = 0.0
+    for k in range(N_FEAT):
+        d += w[0, k] * x[k] + w[1, k] * x[N_FEAT + k]
+    return 1.0 / (1.0 + math.exp(-d / 4))
+
+
 @njit(cache=True)
 def evaluate(s, i):
     """i 番の人から見た勝ちやすさ（0〜1）。終わっていれば勝ち1・引き分け0.5・負け0。"""
@@ -201,8 +291,8 @@ def _same(a, b):
 
 
 @njit(cache=True)
-def search(root_state, iterations, c, depth, seed):
-    """根の手番の人の手を選び、その手（11個の整数）と、根の手ごとの回数を返す。"""
+def search(root_state, iterations, c, depth, seed, ew):
+    """根の手番の人の手を選び、その手（11個の整数）と、根の手ごとの回数を返す。ew は評価の重み（(2, N_FEAT)）。"""
     np.random.seed(seed)
     me = root_state[TURN] % 2
     cap = iterations + 2
@@ -276,7 +366,7 @@ def search(root_state, iterations, c, depth, seed):
             path[plen] = node
             plen += 1
             d += 1
-        v_me = evaluate(s, me)
+        v_me = evaluate_w(s, me, ew)
         for k in range(plen):
             nd = path[k]
             n_vis[nd] += 1
@@ -299,12 +389,29 @@ def search(root_state, iterations, c, depth, seed):
 class FastMCTSAgent:
     """agents.MCTSAgent と同じ考え方の速い版。名前は fmcts<回数>（例 fmcts2000）。"""
 
-    def __init__(self, iterations: int = 400, c: float = 0.7, depth: int = 6) -> None:
+    def __init__(
+        self,
+        iterations: int = 400,
+        c: float = 0.7,
+        depth: int = 6,
+        weights: np.ndarray | None = None,
+        name: str | None = None,
+    ) -> None:
         self.iterations = iterations
         self.c = c
         self.depth = depth
-        self.name = f"fmcts{iterations}"
+        self.weights = np.ascontiguousarray(
+            HAND_WEIGHTS if weights is None else weights, dtype=np.float64
+        ).reshape(2, N_FEAT)
+        self.name = name or f"fmcts{iterations}"
 
     def act(self, state: State, rng: random.Random) -> Action:
-        a, _ = search(from_state(state), self.iterations, self.c, self.depth, rng.getrandbits(31))
+        a, _ = search(
+            from_state(state),
+            self.iterations,
+            self.c,
+            self.depth,
+            rng.getrandbits(31),
+            self.weights,
+        )
         return to_action(a)
