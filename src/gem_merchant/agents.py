@@ -178,7 +178,10 @@ class MCTSAgent:
 
 
 def make_agent(name: str):
-    """名前から AI を作る: random / greedy / mcts<回数>（例 mcts400）/ fmcts<回数>（速い版）。"""
+    """名前から AI を作る: random / greedy / mcts<回数>（例 mcts400）/ fmcts<回数>（速い版）。
+
+    fmcts<回数>@<重みの .npy>（例 fmcts2000@models/eval_champion.npy）は、葉の評価に学んだ重みを使う。
+    """
     if name == "random":
         return RandomAgent()
     if name == "greedy":
@@ -186,7 +189,12 @@ def make_agent(name: str):
     if name.startswith("fmcts"):
         from .fast_mcts import FastMCTSAgent  # numba を使うので、使うときだけ読む
 
-        return FastMCTSAgent(int(name[5:] or 400))
+        n, _, path = name[5:].partition("@")
+        if path:
+            import numpy as np
+
+            return FastMCTSAgent(int(n or 400), weights=np.load(path), name=name)
+        return FastMCTSAgent(int(n or 400))
     if name.startswith("mcts"):
         return MCTSAgent(int(name[4:] or 400))
     raise ValueError(f"知らない AI の名前: {name}")
