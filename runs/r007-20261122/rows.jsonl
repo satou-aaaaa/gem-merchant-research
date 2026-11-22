@@ -1,0 +1,75 @@
+{"seed": 1002, "turn": 51, "0": null, "4": null}
+{"seed": 1002, "turn": 52, "0": null, "4": null}
+{"seed": 1002, "turn": 53, "0": null, "4": null}
+{"seed": 1002, "turn": 54, "0": null, "4": null}
+{"seed": 1002, "turn": 55, "0": null, "4": null}
+{"seed": 1002, "turn": 56, "0": null, "4": null}
+{"seed": 1002, "turn": 57, "0": null, "4": null}
+{"seed": 1002, "turn": 58, "0": null, "4": null}
+{"seed": 1002, "turn": 59, "0": null, "4": null}
+{"seed": 1002, "turn": 60, "0": null, "4": null}
+{"seed": 1002, "turn": 61, "0": null, "4": null}
+{"seed": 1002, "turn": 62, "0": null, "4": null}
+{"seed": 1002, "turn": 63, "0": null, "4": null}
+{"seed": 1002, "turn": 64, "0": null, "4": {"verdict": "best", "loss_min": 0.0, "nodes": 145616248}}
+{"seed": 1002, "turn": 65, "0": null, "4": {"verdict": "best", "loss_min": 0.0, "nodes": 391419}}
+{"seed": 1002, "turn": 66, "0": null, "4": {"verdict": "best", "loss_min": 0.0, "nodes": 130024548}}
+{"seed": 1002, "turn": 67, "0": null, "4": {"verdict": "best", "loss_min": 0.0, "nodes": 523627}}
+{"seed": 1002, "turn": 68, "0": null, "4": {"verdict": "best", "loss_min": 0.0, "nodes": 203724570}}
+{"seed": 1002, "turn": 69, "0": null, "4": {"verdict": "best", "loss_min": 0.0, "nodes": 701235}}
+{"seed": 1002, "turn": 70, "0": null, "4": {"verdict": "best", "loss_min": 0.0, "nodes": 159723586}}
+{"seed": 1002, "turn": 71, "0": null, "4": {"verdict": "best", "loss_min": 0.0, "nodes": 123171}}
+{"seed": 1002, "turn": 72, "0": null, "4": {"verdict": "best", "loss_min": 0.0, "nodes": 84781180}}
+{"seed": 1002, "turn": 73, "0": null, "4": {"verdict": "best", "loss_min": 0.0, "nodes": 103109}}
+{"seed": 1002, "turn": 74, "0": null, "4": {"verdict": "best", "loss_min": 0.0, "nodes": 58494729}}
+{"seed": 1002, "turn": 75, "0": null, "4": {"verdict": "best", "loss_min": 0.0, "nodes": 104503}}
+{"seed": 1002, "turn": 76, "0": null, "4": {"verdict": "best", "loss_min": 0.0, "nodes": 96638175}}
+{"seed": 1002, "turn": 77, "0": null, "4": {"verdict": "best", "loss_min": 0.0, "nodes": 968548}}
+{"seed": 1002, "turn": 78, "0": {"verdict": "best", "loss_min": 0.0, "nodes": 327}, "4": {"verdict": "best", "loss_min": 0.0, "nodes": 66221782}}
+{"seed": 1002, "turn": 79, "0": {"verdict": "best", "loss_min": 0.0, "nodes": 2}, "4": {"verdict": "best", "loss_min": 0.0, "nodes": 2}}
+{"seed": 1001, "turn": 49, "0": null, "4": null}
+{"seed": 1001, "turn": 50, "0": null, "4": null}
+{"seed": 1001, "turn": 51, "0": null, "4": null}
+{"seed": 1001, "turn": 52, "0": null, "4": null}
+{"seed": 1001, "turn": 53, "0": null, "4": null}
+{"seed": 1001, "turn": 54, "0": null, "4": {"verdict": "best", "loss_min": 0.0, "nodes": 589434160}}
+{"seed": 1001, "turn": 55, "0": null, "4": {"verdict": "best", "loss_min": 0.0, "nodes": 191207856}}
+{"seed": 1001, "turn": 56, "0": null, "4": {"verdict": "best", "loss_min": 0.0, "nodes": 529680569}}
+{"seed": 1001, "turn": 57, "0": null, "4": {"verdict": "best", "loss_min": 0.0, "nodes": 440403024}}
+{"seed": 1001, "turn": 58, "0": {"verdict": "best", "loss_min": 0.0, "nodes": 62}, "4": {"verdict": "best", "loss_min": 0.0, "nodes": 13844674476}}
+{"seed": 1001, "turn": 59, "0": {"verdict": "best", "loss_min": 0.0, "nodes": 40}, "4": {"verdict": "best", "loss_min": 0.0, "nodes": 312}}
+{"seed": 1004, "turn": 46, "0": null, "4": null}
+{"seed": 1004, "turn": 47, "0": null, "4": null}
+{"seed": 1004, "turn": 48, "0": null, "4": null}
+{"seed": 1004, "turn": 49, "0": null, "4": null}
+{"seed": 1004, "turn": 50, "0": null, "4": null}
+{"seed": 1004, "turn": 51, "0": null, "4": null}
+{"seed": 1004, "turn": 52, "0": null, "4": null}
+{"seed": 1004, "turn": 53, "0": null, "4": null}
+{"seed": 1004, "turn": 54, "0": null, "4": null}
+{"seed": 1004, "turn": 55, "0": null, "4": {"verdict": "best", "loss_min": 0.0, "nodes": 67322961}}
+{"seed": 1004, "turn": 56, "0": {"verdict": "best", "loss_min": 0.0, "nodes": 850}, "4": {"verdict": "best", "loss_min": 0.0, "nodes": 6342242728}}
+{"seed": 1004, "turn": 57, "0": {"verdict": "best", "loss_min": 0.0, "nodes": 16}, "4": {"verdict": "best", "loss_min": 0.0, "nodes": 72070498}}
+{"seed": 1000, "turn": 48, "0": null, "4": null}
+{"seed": 1000, "turn": 49, "0": null, "4": null}
+{"seed": 1000, "turn": 50, "0": null, "4": null}
+{"seed": 1000, "turn": 51, "0": null, "4": null}
+{"seed": 1000, "turn": 52, "0": null, "4": null}
+{"seed": 1000, "turn": 53, "0": null, "4": null}
+{"seed": 1000, "turn": 54, "0": null, "4": null}
+{"seed": 1000, "turn": 55, "0": null, "4": {"verdict": "mistake", "loss_min": 0.05860805860805862, "nodes": 1025323770}}
+{"seed": 1000, "turn": 56, "0": {"verdict": "best", "loss_min": 0.0, "nodes": 358}, "4": {"verdict": "best", "loss_min": 0.0, "nodes": 4189372775}}
+{"seed": 1000, "turn": 57, "0": {"verdict": "best", "loss_min": 0.0, "nodes": 22}, "4": {"verdict": "best", "loss_min": 0.0, "nodes": 230}}
+{"seed": 1005, "turn": 43, "0": null, "4": null}
+{"seed": 1005, "turn": 44, "0": null, "4": null}
+{"seed": 1005, "turn": 45, "0": null, "4": null}
+{"seed": 1005, "turn": 46, "0": null, "4": null}
+{"seed": 1005, "turn": 47, "0": null, "4": null}
+{"seed": 1005, "turn": 48, "0": null, "4": {"verdict": "best", "loss_min": 0.0, "nodes": 73232495}}
+{"seed": 1005, "turn": 49, "0": null, "4": {"verdict": "best", "loss_min": 0.0, "nodes": 172167268}}
+{"seed": 1005, "turn": 50, "0": null, "4": {"verdict": "best", "loss_min": 0.0, "nodes": 10365991967}}
+{"seed": 1005, "turn": 51, "0": null, "4": {"verdict": "best", "loss_min": 0.0, "nodes": 81607866}}
+{"seed": 1005, "turn": 52, "0": null, "4": {"verdict": "best", "loss_min": 0.0, "nodes": 4101437986}}
+{"seed": 1005, "turn": 53, "0": null, "4": {"verdict": "best", "loss_min": 0.0, "nodes": 34087032}}
+{"seed": 1005, "turn": 54, "0": {"verdict": "best", "loss_min": 0.0, "nodes": 206}, "4": {"verdict": "best", "loss_min": 0.0, "nodes": 294597793}}
+{"seed": 1005, "turn": 55, "0": {"verdict": "best", "loss_min": 0.0, "nodes": 12}, "4": {"verdict": "best", "loss_min": 0.0, "nodes": 12}}

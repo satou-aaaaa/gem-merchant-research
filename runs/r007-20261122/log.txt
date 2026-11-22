@@ -1,0 +1,66 @@
+Process ForkPoolWorker-3:
+Traceback (most recent call last):
+  File "/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/multiprocessing/process.py", line 314, in _bootstrap
+    self.run()
+  File "/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/multiprocessing/process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+  File "/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/multiprocessing/pool.py", line 125, in worker
+    result = (True, func(*args, **kwds))
+                    ^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/gem-merchant-research/gem-merchant-research/scripts/endgame_check.py", line 42, in play_one
+    row[e] = judge(fs, a, round_depth(fs) + e)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/gem-merchant-research/gem-merchant-research/src/gem_merchant/endgame_fast.py", line 400, in judge
+    return _judge_pruned(s, chosen, depth)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/gem-merchant-research/gem-merchant-research/src/gem_merchant/endgame_fast.py", line 345, in _judge_pruned
+    v = value(i, 0.0, a, 1.0)
+        ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/gem-merchant-research/gem-merchant-research/src/gem_merchant/endgame_fast.py", line 333, in value
+    return float(_action_ab(s, acts[i], depth, unk, alpha, beta, stats))
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+KeyboardInterrupt
+Process ForkPoolWorker-1:
+Traceback (most recent call last):
+  File "/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/multiprocessing/process.py", line 314, in _bootstrap
+    self.run()
+  File "/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/multiprocessing/process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+  File "/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/multiprocessing/pool.py", line 125, in worker
+    result = (True, func(*args, **kwds))
+                    ^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/gem-merchant-research/gem-merchant-research/scripts/endgame_check.py", line 42, in play_one
+    row[e] = judge(fs, a, round_depth(fs) + e)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/gem-merchant-research/gem-merchant-research/src/gem_merchant/endgame_fast.py", line 400, in judge
+    return _judge_pruned(s, chosen, depth)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/gem-merchant-research/gem-merchant-research/src/gem_merchant/endgame_fast.py", line 345, in _judge_pruned
+    v = value(i, 0.0, a, 1.0)
+        ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/gem-merchant-research/gem-merchant-research/src/gem_merchant/endgame_fast.py", line 333, in value
+    return float(_action_ab(s, acts[i], depth, unk, alpha, beta, stats))
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+KeyboardInterrupt
+Process ForkPoolWorker-2:
+Traceback (most recent call last):
+  File "/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/multiprocessing/process.py", line 314, in _bootstrap
+    self.run()
+  File "/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/multiprocessing/process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+  File "/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/multiprocessing/pool.py", line 125, in worker
+    result = (True, func(*args, **kwds))
+                    ^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/gem-merchant-research/gem-merchant-research/scripts/endgame_check.py", line 42, in play_one
+    row[e] = judge(fs, a, round_depth(fs) + e)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/gem-merchant-research/gem-merchant-research/src/gem_merchant/endgame_fast.py", line 400, in judge
+    return _judge_pruned(s, chosen, depth)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/gem-merchant-research/gem-merchant-research/src/gem_merchant/endgame_fast.py", line 341, in _judge_pruned
+    c1 = value(idx, 1.0, 0.0, 1.0)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/gem-merchant-research/gem-merchant-research/src/gem_merchant/endgame_fast.py", line 333, in value
+    return float(_action_ab(s, acts[i], depth, unk, alpha, beta, stats))
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+KeyboardInterrupt

@@ -1,0 +1,5 @@
+finished: 2026-11-22T12:21Z
+exit_code: なし
+commit: a78344398640c36990842a2df04797b866e4ce16
+run: https://github.com/satou-aaaaa/gem-merchant-research/actions/runs/44994082562
+command: python scripts/endgame_check.py mcts400 --games 24 --extra 4 --workers 4
