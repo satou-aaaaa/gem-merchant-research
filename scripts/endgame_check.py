@@ -45,6 +45,23 @@ def play_one(args: tuple[str, int, int, int]) -> list[dict]:
     return rows
 
 
+class _NoPool:
+    """--workers 1 のとき Pool の代わりに、同じプロセスで順に指す。"""
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc):
+        return False
+
+    def imap_unordered(self, f, jobs, chunksize=1):
+        return map(f, jobs)
+
+
+def _row_json(r: dict) -> str:
+    return json.dumps({str(k): v for k, v in r.items()}, ensure_ascii=False)
+
+
 def summarize(rows: list[dict], extra: int) -> tuple[int, int, float]:
     rs = [r[extra] for r in rows if r[extra] is not None]
     mistakes = [r["loss_min"] for r in rs if r["verdict"] == "mistake"]
@@ -69,12 +86,19 @@ def main() -> None:
     args = ap.parse_args()
     t = time.time()
     jobs = [(args.agent, args.seed + g, args.min_points, args.extra) for g in range(args.games)]
-    if args.workers > 1:
-        with Pool(args.workers) as pool:
-            games = pool.map(play_one, jobs, chunksize=1)
-    else:
-        games = [play_one(j) for j in jobs]
-    rows = [r for g in games for r in g]
+    out = Path(args.out) if args.out else None
+    if out:
+        out.mkdir(parents=True, exist_ok=True)
+        (out / "rows.jsonl").write_text("", encoding="utf-8")
+    rows = []
+    # 1局終わるごとに rows.jsonl に足す（時間切れで止まっても、終わった局の判定は残る）
+    with Pool(args.workers) if args.workers > 1 else _NoPool() as pool:
+        for game_rows in pool.imap_unordered(play_one, jobs, chunksize=1):
+            rows.extend(game_rows)
+            if out:
+                with open(out / "rows.jsonl", "a", encoding="utf-8") as f:
+                    f.writelines(_row_json(r) + "\n" for r in game_rows)
+    rows.sort(key=lambda r: (r["seed"], r["turn"]))
     lines = []
     for e in sorted({0, args.extra}):
         judged, mistakes, mean_loss = summarize(rows, e)
@@ -92,13 +116,8 @@ def main() -> None:
             )
     lines.append(f"（{time.time() - t:.0f}秒）")
     print("\n".join(lines))
-    if args.out:
-        out = Path(args.out)
-        out.mkdir(parents=True, exist_ok=True)
+    if out:
         (out / "summary.txt").write_text("\n".join(lines) + "\n", encoding="utf-8")
-        with open(out / "rows.jsonl", "w", encoding="utf-8") as f:
-            for r in rows:
-                f.write(json.dumps({str(k): v for k, v in r.items()}, ensure_ascii=False) + "\n")
 
 
 if __name__ == "__main__":

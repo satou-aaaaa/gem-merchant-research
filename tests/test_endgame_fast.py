@@ -77,3 +77,43 @@ def test_far_from_the_end_is_cut_without_reading():
     acts, vals, stats = ef.action_values(fs, 4)
     assert (vals[:, 0] == 0).all() and (vals[:, 1] == 1).all()
     assert stats[0] == stats[1] >= len(acts)  # 根の各手のすぐ下で、読まずに切れている
+
+
+def _check_pruned_matches_full(n_games: int, seed0: int, extra: int) -> tuple[int, int, int]:
+    """枝刈りつきの判定（R-007）が、根の区間を全部読む判定と同じか。判定の数と読んだ節点の数を返す。"""
+    decided = full_nodes = pruned_nodes = 0
+    for s, a in _late_states(n_games, seed0, 9):
+        fs = fast.from_state(s)
+        d = ef.round_depth(fs) + extra
+        full = ef.judge(fs, a, d, prune=False)
+        pruned = ef.judge(fs, a, d)
+        if full is not None:
+            full_nodes += full.pop("nodes")
+            pruned_nodes += pruned.pop("nodes")
+            decided += 1
+        assert pruned == full, (s.turn, full, pruned)
+    return decided, full_nodes, pruned_nodes
+
+
+def test_pruned_judge_matches_full():
+    decided, _, _ = _check_pruned_matches_full(4, 2000, 0)
+    assert decided >= 5
+    decided, _, _ = _check_pruned_matches_full(2, 5000, 1)
+    assert decided >= 3
+
+
+@pytest.mark.slow
+def test_pruned_judge_matches_full_two_rounds_and_reads_less():
+    decided, full_nodes, pruned_nodes = _check_pruned_matches_full(4, 7000, 2)
+    assert decided >= 8
+    assert pruned_nodes < full_nodes / 2
+
+
+def test_pruned_sure_win_and_loss():
+    s = _rich_state()
+    fs = fast.from_state(s)
+    buy = next(a for a in game.legal_actions(s) if a.kind == BUY and a.arg == ("board", 1, 0))
+    for d in (2, 4):
+        assert ef.judge(fs, buy, d)["verdict"] == "best"
+        r = ef.judge(fs, buy, d, prune=False)
+        assert r["verdict"] == "best"

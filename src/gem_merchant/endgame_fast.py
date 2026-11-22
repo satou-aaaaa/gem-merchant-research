@@ -220,17 +220,184 @@ def action_values(s, depth):
     return acts[:m].copy(), vals, stats
 
 
+# ---- 枝刈りつきの読み（R-007） ----
+# 区間 [下限, 上限] は「読み切れない葉を 0 とした期待値つきミニマックスの値」と「1 とした値」の組なので、
+# 2つを別々に、窓（alpha, beta）つきで読める。判定に要るのは窓の外か内かだけなので、要らない枝を読まずに切る。
+# 手番の節点はふつうの αβ、山札の節点は Ballard の Star1（残りの札の値を 0〜1 と見て、平均が窓の外に出たら切る）。
+# 返す値 v は fail-soft: v <= alpha なら本当の値 <= v、v >= beta なら本当の値 >= v、その間なら本当の値そのもの。
+# 窓の中で返る値は、足す順まで全部読みと同じなので、浮動小数点でも全部読みと同じ値になる。
+
+_EPS = 1e-9  # Star1 の窓を、丸めの誤差より十分大きく外側へ広げる幅
+
+
+@njit  # 再帰する関数はキャッシュから読むと落ちる（numba 0.68）ので cache しない
+def _ab(s, depth, unk, alpha, beta, stats):
+    """先手から見た値（読み切れない葉を unk とする）を窓 (alpha, beta) で読む。"""
+    stats[0] += 1
+    if s[DONE]:
+        return _terminal(s)
+    if depth == 0:
+        return unk
+    if s[PASSES] == 0 and _cannot_end(s, depth):
+        stats[1] += 1
+        return unk
+    acts = np.empty((MAX_ACTIONS, A_SIZE), dtype=np.int32)
+    m = reduced(s, acts)
+    order = np.empty(m, dtype=np.int64)
+    k = 0
+    for i in range(m):
+        if acts[i, 0] == K_BUY:
+            order[k] = i
+            k += 1
+    for i in range(m):
+        if acts[i, 0] != K_BUY:
+            order[k] = i
+            k += 1
+    if s[TURN] % 2 == 0:
+        best = -1.0
+        for t in range(m):
+            v = _action_ab(s, acts[order[t]], depth, unk, max(alpha, best), beta, stats)
+            best = max(best, v)
+            if best >= beta:
+                break
+        return best
+    best = 2.0
+    for t in range(m):
+        v = _action_ab(s, acts[order[t]], depth, unk, alpha, min(beta, best), stats)
+        best = min(best, v)
+        if best <= alpha:
+            break
+    return best
+
+
+@njit  # 再帰する関数はキャッシュから読むと落ちる（numba 0.68）ので cache しない
+def _action_ab(s, a, depth, unk, alpha, beta, stats):
+    """手 a を指したあとの値を窓 (alpha, beta) で読む。山札から札が出るなら Star1 で平均する。"""
+    lv = _draw_level(s, a)
+    if depth == 1 or lv < 0:
+        c = s.copy()
+        apply(c, a)
+        return _ab(c, depth - 1, unk, alpha, beta, stats)
+    base = DECK[lv]
+    dn = s[DECKN + lv]
+    top = base + dn - 1
+    total = 0.0
+    for j in range(dn):
+        rest = dn - 1 - j  # まだ読んでいない札の数（値は 0〜1）
+        lo_j = dn * alpha - total - rest - dn * _EPS
+        hi_j = dn * beta - total + dn * _EPS
+        c = s.copy()
+        x = c[base + j]
+        c[base + j] = c[top]
+        c[top] = x
+        apply(c, a)
+        # 値は 0〜1 なので、子の窓は [0, 1] に収める（端で返った値は本当の値。0 と 1 で切れる）
+        v = _ab(c, depth - 1, unk, max(lo_j, 0.0), min(hi_j, 1.0), stats)
+        if v <= lo_j:
+            return (total + v + rest) / dn  # 残りが全部 1 でも alpha に届かない
+        if v >= hi_j:
+            return (total + v) / dn  # 残りが全部 0 でも beta を超える
+        total += v
+    return total / dn
+
+
+def _value(
+    s: np.ndarray,
+    a: np.ndarray,
+    depth: int,
+    unk: float,
+    alpha: float,
+    beta: float,
+    stats: np.ndarray,
+) -> float:
+    return float(_action_ab(s, a, depth, unk, alpha, beta, stats))
+
+
+def _judge_pruned(s: np.ndarray, chosen: Action, depth: int) -> dict | None:
+    """judge と同じ判定を、窓つきの読みで出す（下の judge の説明を見る）。
+
+    値は先手から見たもので、v0 は読み切れない葉を 0、v1 は 1 としたもの（区間の下限と上限）。
+    窓 (0, 1) なら端に出ても本当の値（値は 0〜1 なので）。判定に要らない値は狭い窓で読む。
+    """
+    acts = np.empty((MAX_ACTIONS, A_SIZE), dtype=np.int32)
+    m = int(reduced(s, acts))
+    key = (chosen.kind, chosen.arg, chosen.noble)
+    keys = [(a.kind, a.arg, a.noble) for a in (to_action(acts[i]) for i in range(m))]
+    if key not in keys:
+        return None
+    idx = keys.index(key)
+    others = [i for i in range(m) if i != idx]
+    stats = np.zeros(_N_STATS, dtype=np.int64)
+
+    def value(i: int, unk: float, alpha: float, beta: float) -> float:
+        return float(_action_ab(s, acts[i], depth, unk, alpha, beta, stats))
+
+    def out(r: dict) -> dict:
+        r["nodes"] = int(stats[0])
+        return r
+
+    if s[TURN] % 2 == 0:
+        # 手番の人＝先手。悪手: 選んだ手の上限 c1 < ほかの手の下限の最大（選んだ手の下限は c1 以下なので要らない）
+        c1 = value(idx, 1.0, 0.0, 1.0)
+        best_lo = -1.0
+        for i in others:
+            a = max(c1, best_lo) - _EPS
+            v = value(i, 0.0, a, 1.0)
+            if v > a:  # 窓の中なので本当の値
+                best_lo = max(best_lo, v)
+        if c1 < best_lo:
+            return out({"verdict": "mistake", "loss_min": best_lo - c1})
+        # 最善: 選んだ手の下限 c0 >= どの手の上限（選んだ手自身の上限 c1 も含む）
+        c0 = value(idx, 0.0, c1 - _EPS, 1.0)
+        if not c0 >= c1:
+            return None
+        if c0 >= 1.0:  # 選んだ手で必ず勝つ。上限は 1 を超えないので、ほかの手を読むまでもない
+            return out({"verdict": "best", "loss_min": 0.0})
+        for i in others:
+            v = value(i, 1.0, c0 - _EPS, c0 + _EPS)
+            if v >= c0 + _EPS or (v > c0 - _EPS and not c0 >= v):
+                return None
+        return out({"verdict": "best", "loss_min": 0.0})
+    # 手番の人＝後手。後手から見た区間は [1 - 上限, 1 - 下限] = [1 - v1, 1 - v0]
+    c0 = value(idx, 0.0, 0.0, 1.0)
+    c_hi = 1 - c0
+    best_lo = -1.0
+    low = c0  # 読んだほかの手の上限（先手から見て）の最小。これ以上の手は悪手の判定に効かない
+    for i in others:
+        b = low + _EPS
+        v = value(i, 1.0, 0.0, b)
+        if v < b:  # 窓の中なので本当の値
+            low = min(low, v)
+            best_lo = max(best_lo, 1 - v)
+    if c_hi < best_lo:
+        return out({"verdict": "mistake", "loss_min": best_lo - c_hi})
+    c1 = value(idx, 1.0, 0.0, c0 + _EPS)
+    if not (c1 < c0 + _EPS and 1 - c1 >= c_hi):
+        return None
+    c_lo = 1 - c1
+    if c_lo >= 1.0:  # 後手が必ず勝つ（同じ理由で、ほかの手を読むまでもない）
+        return out({"verdict": "best", "loss_min": 0.0})
+    for i in others:
+        v = value(i, 0.0, c1 - _EPS, c1 + _EPS)
+        if v <= c1 - _EPS or (v < c1 + _EPS and not c_lo >= 1 - v):
+            return None
+    return out({"verdict": "best", "loss_min": 0.0})
+
+
 def solve(s: np.ndarray, depth: int) -> tuple[float, float]:
     stats = np.zeros(_N_STATS, dtype=np.int64)
     lo, hi = _solve(s, depth, stats)
     return float(lo), float(hi)
 
 
-def judge(s: np.ndarray, chosen: Action, depth: int) -> dict | None:
+def judge(s: np.ndarray, chosen: Action, depth: int, prune: bool = True) -> dict | None:
     """endgame.judge と同じ判定（chosen は正解版の手）。決着がつかないときは None。
 
-    返す dict には、読んだ節点の数 nodes も入れる。
+    返す dict には、読んだ節点の数 nodes も入れる。prune=True（既定）は窓つきの読み（R-007）で、
+    判定と loss_min は prune=False（根の区間を全部読む）と同じ。
     """
+    if prune:
+        return _judge_pruned(s, chosen, depth)
     acts, vals, stats = action_values(s, depth)
     key = (chosen.kind, chosen.arg, chosen.noble)
     keys = [(a.kind, a.arg, a.noble) for a in map(to_action, acts)]
