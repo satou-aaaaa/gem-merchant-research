@@ -117,3 +117,28 @@ def test_pruned_sure_win_and_loss():
         assert ef.judge(fs, buy, d)["verdict"] == "best"
         r = ef.judge(fs, buy, d, prune=False)
         assert r["verdict"] == "best"
+
+
+def test_node_budget_never_changes_a_verdict():
+    """節点の上限（R-007）: 上限内で出た判定は上限なしと同じ。超えたら "over" を返し、判定はしない。"""
+    seen_over = seen_same = 0
+    for s, a in _late_states(2, 2000, 9):
+        fs = fast.from_state(s)
+        d = ef.round_depth(fs) + 1
+        full = ef.judge(fs, a, d)
+        for budget in (50, 2000):
+            r = ef.judge(fs, a, d, max_nodes=budget)
+            if r is not None and r["verdict"] == "over":
+                assert r["nodes"] > budget
+                seen_over += 1
+                continue
+            if r is not None:
+                assert r["nodes"] <= budget
+                r.pop("nodes")
+                f = dict(full)
+                f.pop("nodes")
+                assert r == f
+            else:
+                assert full is None
+            seen_same += 1
+    assert seen_over >= 3 and seen_same >= 3

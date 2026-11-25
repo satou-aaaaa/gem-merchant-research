@@ -42,7 +42,8 @@ from .fast import (
 from .game import MAX_TURNS, Action
 from .rules import WIN_POINTS as _WIN
 
-_N_STATS = 2  # 読んだ節点の数・枝刈りで切った数
+# stats の中身: 読んだ節点の数・枝刈りで切った数・節点の上限（0 は上限なし）・上限を超えたか（R-007）
+_N_STATS = 4
 
 
 @njit(cache=True)
@@ -234,6 +235,9 @@ _EPS = 1e-9  # Star1 の窓を、丸めの誤差より十分大きく外側へ�
 def _ab(s, depth, unk, alpha, beta, stats):
     """先手から見た値（読み切れない葉を unk とする）を窓 (alpha, beta) で読む。"""
     stats[0] += 1
+    if stats[2] > 0 and stats[0] > stats[2]:
+        stats[3] = 1  # 節点の上限を超えた。ここから先の値は使わない（呼んだ側が捨てる）
+        return unk
     if s[DONE]:
         return _terminal(s)
     if depth == 0:
@@ -313,8 +317,15 @@ def _value(
     return float(_action_ab(s, a, depth, unk, alpha, beta, stats))
 
 
-def _judge_pruned(s: np.ndarray, chosen: Action, depth: int) -> dict | None:
+class _OverBudget(Exception):
+    """読んだ節点の数が上限を超えた（判定は出さない）。"""
+
+
+def _judge_pruned(s: np.ndarray, chosen: Action, depth: int, max_nodes: int = 0) -> dict | None:
     """judge と同じ判定を、窓つきの読みで出す（下の judge の説明を見る）。
+
+    max_nodes > 0 なら、読んだ節点がそれを超えたところで読むのをやめ、{"verdict": "over"} を返す。
+    上限を超えた読みの値は1つも使わないので、"best" と "mistake" の判定は上限なしと同じ。
 
     値は先手から見たもので、v0 は読み切れない葉を 0、v1 は 1 としたもの（区間の下限と上限）。
     窓 (0, 1) なら端に出ても本当の値（値は 0〜1 なので）。判定に要らない値は狭い窓で読む。
@@ -328,14 +339,25 @@ def _judge_pruned(s: np.ndarray, chosen: Action, depth: int) -> dict | None:
     idx = keys.index(key)
     others = [i for i in range(m) if i != idx]
     stats = np.zeros(_N_STATS, dtype=np.int64)
+    stats[2] = max_nodes
 
     def value(i: int, unk: float, alpha: float, beta: float) -> float:
-        return float(_action_ab(s, acts[i], depth, unk, alpha, beta, stats))
+        v = float(_action_ab(s, acts[i], depth, unk, alpha, beta, stats))
+        if stats[3]:
+            raise _OverBudget
+        return v
 
     def out(r: dict) -> dict:
         r["nodes"] = int(stats[0])
         return r
 
+    try:
+        return _judge_window(s, idx, others, value, out)
+    except _OverBudget:
+        return {"verdict": "over", "loss_min": None, "nodes": int(stats[0])}
+
+
+def _judge_window(s, idx, others, value, out) -> dict | None:
     if s[TURN] % 2 == 0:
         # 手番の人＝先手。悪手: 選んだ手の上限 c1 < ほかの手の下限の最大（選んだ手の下限は c1 以下なので要らない）
         c1 = value(idx, 1.0, 0.0, 1.0)
@@ -390,14 +412,17 @@ def solve(s: np.ndarray, depth: int) -> tuple[float, float]:
     return float(lo), float(hi)
 
 
-def judge(s: np.ndarray, chosen: Action, depth: int, prune: bool = True) -> dict | None:
+def judge(
+    s: np.ndarray, chosen: Action, depth: int, prune: bool = True, max_nodes: int = 0
+) -> dict | None:
     """endgame.judge と同じ判定（chosen は正解版の手）。決着がつかないときは None。
 
     返す dict には、読んだ節点の数 nodes も入れる。prune=True（既定）は窓つきの読み（R-007）で、
     判定と loss_min は prune=False（根の区間を全部読む）と同じ。
+    max_nodes > 0（prune=True のときだけ）は読む節点の上限で、超えたら {"verdict": "over"} を返す。
     """
     if prune:
-        return _judge_pruned(s, chosen, depth)
+        return _judge_pruned(s, chosen, depth, max_nodes)
     acts, vals, stats = action_values(s, depth)
     key = (chosen.kind, chosen.arg, chosen.noble)
     keys = [(a.kind, a.arg, a.noble) for a in map(to_action, acts)]

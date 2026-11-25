@@ -3,6 +3,7 @@
 AI どうしを対局させ、各手番で読み切る。決着がついた局面だけを数え、AI が最善の手を選んだ割合と、
 外した手の見込みの損（勝つ見込みの差）をまとめる。読む深さは「この一巡の終わり」＋ --extra 手番。
 --extra 2 なら次の一巡の終わりまで（二巡先）。同じ局面を一巡先でも読み、増えた分も出す。
+--max-nodes を付けると、1局面で読む節点の数に上限を置く（超えた局面は「上限で打ち切り」として数え、判定に入れない）。
 
     python scripts/endgame_check.py mcts400 --games 10 --extra 2 --workers 4
 """
@@ -26,9 +27,9 @@ from gem_merchant.agents import make_agent
 from gem_merchant.endgame_fast import judge, round_depth
 
 
-def play_one(args: tuple[str, int, int, int]) -> list[dict]:
-    """1局を指し、調べた手番ごとに {extra: 判定} を返す。"""
-    agent_name, seed, min_points, extra = args
+def play_one(args: tuple[str, int, int, int, int]) -> list[dict]:
+    """1局を指し、調べた手番ごとに {extra: 判定} を返す（判定には読んだ秒数 sec も入れる）。"""
+    agent_name, seed, min_points, extra, max_nodes = args
     agent = make_agent(agent_name)
     s = game.new_game(seed)
     rng = random.Random(seed)
@@ -39,7 +40,10 @@ def play_one(args: tuple[str, int, int, int]) -> list[dict]:
             fs = fast.from_state(s)
             row = {"seed": seed, "turn": s.turn}
             for e in sorted({0, extra}):
-                row[e] = judge(fs, a, round_depth(fs) + e)
+                t = time.time()
+                r = judge(fs, a, round_depth(fs) + e, max_nodes=max_nodes)
+                row[e] = r
+                row[f"sec{e}"] = round(time.time() - t, 3)
             rows.append(row)
         game.apply(s, a)
     return rows
@@ -62,10 +66,13 @@ def _row_json(r: dict) -> str:
     return json.dumps({str(k): v for k, v in r.items()}, ensure_ascii=False)
 
 
-def summarize(rows: list[dict], extra: int) -> tuple[int, int, float]:
+def summarize(rows: list[dict], extra: int) -> tuple[int, int, float, int]:
+    """読み切れた手の数・確実な悪手の数・悪手の損の平均・上限で打ち切った手の数。"""
     rs = [r[extra] for r in rows if r[extra] is not None]
-    mistakes = [r["loss_min"] for r in rs if r["verdict"] == "mistake"]
-    return len(rs), len(mistakes), statistics.mean(mistakes) if mistakes else 0.0
+    over = sum(1 for v in rs if v["verdict"] == "over")
+    rs = [v for v in rs if v["verdict"] in ("best", "mistake")]
+    mistakes = [v["loss_min"] for v in rs if v["verdict"] == "mistake"]
+    return len(rs), len(mistakes), statistics.mean(mistakes) if mistakes else 0.0, over
 
 
 def main() -> None:
@@ -77,6 +84,9 @@ def main() -> None:
     ap.add_argument(
         "--extra", type=int, default=0, help="一巡の終わりより何手番先まで読むか（2で次の一巡まで）"
     )
+    ap.add_argument(
+        "--max-nodes", type=int, default=0, help="1局面で読む節点の上限（0 は上限なし）"
+    )
     ap.add_argument("--workers", type=int, default=1, help="並べて指す局の数（CPU の数まで）")
     ap.add_argument(
         "--out",
@@ -85,7 +95,10 @@ def main() -> None:
     )
     args = ap.parse_args()
     t = time.time()
-    jobs = [(args.agent, args.seed + g, args.min_points, args.extra) for g in range(args.games)]
+    jobs = [
+        (args.agent, args.seed + g, args.min_points, args.extra, args.max_nodes)
+        for g in range(args.games)
+    ]
     out = Path(args.out) if args.out else None
     if out:
         out.mkdir(parents=True, exist_ok=True)
@@ -101,16 +114,19 @@ def main() -> None:
     rows.sort(key=lambda r: (r["seed"], r["turn"]))
     lines = []
     for e in sorted({0, args.extra}):
-        judged, mistakes, mean_loss = summarize(rows, e)
+        judged, mistakes, mean_loss, over = summarize(rows, e)
         rate = 1 - mistakes / judged if judged else float("nan")
+        secs = sorted(r[f"sec{e}"] for r in rows)
+        median = statistics.median(secs) if secs else 0.0
         lines.append(
             f"{args.agent}（一巡の終わり＋{e}手番）: {args.games}局・調べた手 {len(rows)}・"
             f"読み切れた手 {judged}・最善を選んだ割合 {rate:.3f}・確実な悪手 {mistakes}・"
-            f"悪手で失った勝つ見込み（少なくとも）の平均 {mean_loss:.3f}"
+            f"悪手で失った勝つ見込み（少なくとも）の平均 {mean_loss:.3f}・"
+            f"上限で打ち切り {over}・1局面の秒数 中央値 {median:.2f}・最大 {max(secs, default=0):.1f}"
         )
     for r in rows:
         v = r[args.extra]
-        if v is not None and v["verdict"] == "mistake":
+        if v is not None and v["verdict"] == "mistake":  # 打ち切り（over）は数えない
             lines.append(
                 f"  悪手: シード {r['seed']} の {r['turn']}手番目・損 {v['loss_min']:.3f}以上"
             )
