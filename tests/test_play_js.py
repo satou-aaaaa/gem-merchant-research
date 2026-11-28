@@ -11,13 +11,17 @@ import shutil
 import subprocess
 from pathlib import Path
 
+import numpy as np
 import pytest
 
 from gem_merchant import game
 from gem_merchant.agents import GreedyAgent, evaluate, reduce_actions
 from gem_merchant.cards import CARDS, NOBLES
+from gem_merchant.fast import from_state
+from gem_merchant.fast_mcts import evaluate_w
 
 ROOT = Path(__file__).resolve().parents[1]
+CHAMPION = np.load(ROOT / "models" / "eval_champion.npy")
 NODE = shutil.which("node")
 pytestmark = pytest.mark.skipif(NODE is None, reason="node が必要")
 
@@ -113,7 +117,12 @@ def test_engine_matches_python():
             acts = game.legal_actions(s)
             assert step["legal"] == [act(a) for a in acts]
             assert step["reduced"] == [act(a) for a in reduce_actions(s, acts)]
-            assert step["eval"] == pytest.approx([evaluate(s, 0), evaluate(s, 1)], abs=1e-12)
+            # AI の評価は学んだ重み（fast_mcts.evaluate_w とチャンピオン）、手作りの評価も残して照合する
+            fs = from_state(s)
+            want = [evaluate_w(fs, 0, CHAMPION), evaluate_w(fs, 1, CHAMPION)]
+            assert step["eval"] == pytest.approx(want, abs=1e-12)
+            assert step["hand"] == pytest.approx([evaluate(s, 0), evaluate(s, 1)], abs=1e-12)
+            assert step["handW"] == pytest.approx(step["hand"], abs=1e-9)  # やさしいの重み
             t = s.clone()
             game.apply(t, acts[k])
             assert step["after"] == snap(t)
@@ -124,6 +133,11 @@ def test_engine_matches_python():
             seen["blind"] += a.kind == game.RESERVE and a.arg[1] < 0
         assert jg["result"] == game.result(end)
     assert all(v > 0 for v in seen.values()), seen  # 珍しい手も確かめている
+
+
+def test_weights_are_champion():
+    """対戦ページの AI の重みは models/eval_champion.npy と同じ（違えば py scripts/build_pages.py で写す）。"""
+    assert run_js({"cmd": "weights"}) == CHAMPION.tolist()
 
 
 def test_new_game_is_valid():

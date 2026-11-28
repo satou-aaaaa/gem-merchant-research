@@ -27,7 +27,7 @@
  "AI の勝ち": "The AI wins",
  "AI の強さ": "AI strength",
  "AI は1局に1人 {n}回予約し、その {b} をあとで買っています。山札から伏せて予約するのは {bl} だけ。見えている札の中から、割引がそろえば買える札を予約し、金ももらう使い方が中心です。": "The AI reserves {n} times per player per game and later buys {b} of those cards. Only {bl} are blind reserves from a deck. The main use is to reserve a visible card you can buy once your discounts line up, and take the gold too.",
- "AI は、見えない札（山札の順と相手が伏せて予約した札）を何通りも仮に決めて先を読む「情報集合モンテカルロ木探索」で手を選びます。ブラウザの中で動くので、通信も登録もいりません。": "The AI tries many guesses of the hidden cards (deck order and your blind reserves) and reads ahead with Information Set Monte Carlo Tree Search. It runs inside your browser, so no connection or sign-up is needed.",
+ "AI は、見えない札（山札の順と相手が伏せて予約した札）を何通りも仮に決めて先を読む「情報集合モンテカルロ木探索」で手を選びます。読んだ先の局面の良し悪しは、AI どうしの自己対戦から学んだ見積もりで決めます。ブラウザの中で動くので、通信も登録もいりません。": "The AI tries many guesses of the hidden cards (deck order and your blind reserves) and reads ahead with Information Set Monte Carlo Tree Search. It judges the positions it reaches with an evaluation learned from AI self-play. It runs inside your browser, so no connection or sign-up is needed.",
  "Lv{0}の山札から伏せて予約": "Reserve the top of the Lv{0} deck face down",
  "Lv{0}の山札から伏せて予約しますか？（金を1つもらえる）": "Reserve the top of the Lv{0} deck face down? (You get 1 gold.)",
  "{0} 残り{1}枚": "{0}, {1} left",

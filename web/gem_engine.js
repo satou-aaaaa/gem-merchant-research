@@ -400,13 +400,67 @@
     return v;
   }
 
-  // i 番の人から見た勝ちやすさ（0〜1）
-  function evaluate(s, i) {
+  // 手作りの評価で見た勝ちやすさ（0〜1）。AI は下の学んだ評価（evaluate）を使う。比べる相手として残す
+  function evaluateHand(s, i) {
     if (s.done) {
       const r = result(s);
       return r < 0 ? 0.5 : r === i ? 1 : 0;
     }
     const d = playerValue(s, i) - playerValue(s, 1 - i);
+    return 1 / (1 + Math.exp(-d / 4));
+  }
+
+  // --- 学んだ評価（fast_mcts.features・evaluate_w。R-004 の自己対戦で学んだ重み） ---
+  // 学んだ重み（序盤・終盤の2組×8特徴）。models/eval_champion.npy から scripts/build_pages.py が書き直す（手で直さない）
+  const EVAL_W = [[0.13124247370625824, 4.982344622521007, 0.3411718263095688, 0.21646797569109816, 20.29007150355975, 0.2849663910457246, 1.6531627268663676, 0.47234272006728817], [2.5873062787018566, -0.4127668190720059, 0.1291355794791497, 0.2002792479362845, 12.684966251279553, 1.371089399048835, -0.7548085526059203, -1.685806983346915]]; // EVAL_W
+  // 手作りの評価（playerValue）と同じ値になる重み（fast_mcts.HAND_WEIGHTS）
+  const HAND_W = [
+    [1.0, 0.8, 0.1, 0.2, 3.0, 0.5, 0.0, 0.0],
+    [1.0, 0.8, 0.1, 0.2, 3.0, 0.5, 0.0, 0.0],
+  ];
+  const N_FEAT = 8;
+  const PHASE_TURNS = 60; // 0 手番で序盤の重み、これ以降は終盤の重み、間は直線でまぜる
+
+  // i 番の人の特徴: 点・割引の数・宝石チップ・金チップ・貴族の近さ・買えそうな札の上位3つ・割引の色の数・予約の数
+  function features(s, i) {
+    const p = s.players[i];
+    const f = [p.points, 0, 0, p.tokens[GOLD], 0, 0, 0, p.reserved.length];
+    for (let c = 0; c < N; c++) {
+      f[1] += p.bonus[c];
+      f[2] += p.tokens[c];
+      if (p.bonus[c] > 0) f[6] += 1;
+    }
+    for (const n of s.nobles) {
+      let need = 0;
+      for (let c = 0; c < N; c++) need += Math.max(0, NOBLES[n].need[c] - p.bonus[c]);
+      f[4] += 1 / Math.pow(1 + need, 1.5);
+    }
+    const near = [];
+    for (const level of [1, 2, 3])
+      for (const cid of s.board[level]) if (cid >= 0) near.push((CARDS[cid].points + 0.8) / (1 + shortfall(p, cid)));
+    for (const [cid] of p.reserved) near.push((CARDS[cid].points + 0.8) / (1 + shortfall(p, cid)));
+    near.sort((x, y) => y - x);
+    let t = 0;
+    for (const x of near.slice(0, 3)) t += x;
+    f[5] = t;
+    return f;
+  }
+
+  // i 番の人から見た勝ちやすさ（0〜1）。終わっていれば勝ち1・引き分け0.5・負け0
+  function evaluate(s, i, w) {
+    if (s.done) {
+      const r = result(s);
+      return r < 0 ? 0.5 : r === i ? 1 : 0;
+    }
+    w = w || EVAL_W;
+    const f0 = features(s, i);
+    const f1 = features(s, 1 - i);
+    const a = Math.min(1, s.turn / PHASE_TURNS);
+    let d = 0;
+    for (let k = 0; k < N_FEAT; k++) {
+      const x = f0[k] - f1[k];
+      d += w[0][k] * ((1 - a) * x) + w[1][k] * (a * x);
+    }
     return 1 / (1 + Math.exp(-d / 4));
   }
 
@@ -437,7 +491,7 @@
   }
 
   // --- AI ---
-  function greedyAct(s, rng) {
+  function greedyAct(s, rng, w) {
     const me = current(s);
     const acts = rng.shuffle(reduceActions(legalActions(s)));
     let best = acts[0];
@@ -445,7 +499,7 @@
     for (const a of acts) {
       const t = clone(s);
       apply(t, a);
-      let v = evaluate(t, me);
+      let v = evaluate(t, me, w);
       if (a.kind === "buy") v += 1e-6;
       if (v > bestV) {
         best = a;
@@ -481,6 +535,7 @@
   function mctsSearch(s, iterations, rng, opts) {
     const c = (opts && opts.c) || 0.7;
     const depth = (opts && opts.depth) || 6;
+    const w = opts && opts.evalW;
     const rootActs = reduceActions(legalActions(s));
     const me = current(s);
     const newNode = (player) => ({ children: new Map(), n: 0, w: 0, avail: 0, player });
@@ -525,7 +580,7 @@
           path.push(node);
           d += 1;
         }
-        const vMe = evaluate(t, me);
+        const vMe = evaluate(t, me, w);
         for (const nd of path) {
           nd.n += 1;
           nd.w += nd.player === me ? vMe : 1 - vMe;
@@ -537,13 +592,14 @@
       return { action: a, n: ch ? ch.n : 0, value: ch && ch.n ? ch.w / ch.n : null };
     });
     stats.sort((x, y) => y.n - x.n);
-    return { best: stats[0].action, stats, value: root.n ? 1 - root.w / root.n : evaluate(s, me) };
+    return { best: stats[0].action, stats, value: root.n ? 1 - root.w / root.n : evaluate(s, me, w) };
   }
 
   // 強さの段: 名前 → 手を選ぶ関数
   const LEVELS = {
     // iterations 0 は greedy（1手先だけを見る）。強い・最強は PC で約1秒・約4秒（スマホはその2〜3倍）
-    easy: { iterations: 0 },
+    // やさしいは手作りの評価のまま（学んだ評価の greedy は強くなりすぎ、ふつうとの差が縮む）
+    easy: { iterations: 0, evalW: HAND_W },
     normal: { iterations: 600 },
     strong: { iterations: 5000 },
     max: { iterations: 20000 },
@@ -552,8 +608,8 @@
   function aiAct(s, level, seed) {
     const rng = makeRng(seed);
     const lv = LEVELS[level] || LEVELS.normal;
-    if (!lv.iterations) return { best: greedyAct(s, rng), stats: null };
-    return mctsSearch(s, lv.iterations, rng);
+    if (!lv.iterations) return { best: greedyAct(s, rng, lv.evalW), stats: null };
+    return mctsSearch(s, lv.iterations, rng, { evalW: lv.evalW });
   }
 
   function sameAction(a, b) {
@@ -580,6 +636,10 @@
     apply,
     result,
     playerValue,
+    evaluateHand,
+    features,
+    EVAL_W,
+    HAND_W,
     evaluate,
     reduceActions,
     greedyAct,
