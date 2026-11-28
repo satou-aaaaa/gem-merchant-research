@@ -39,6 +39,23 @@ PAGES = ["index.html", "play.html", "rules.html", "stats.html", "tips.html", "qu
 JS_FILES = ["gem_engine.js", "gem_ui.js", "play_worker.js"]
 
 
+WEIGHTS = ROOT / "models" / "eval_champion.npy"
+EVAL_W_LINE = re.compile(r"^  const EVAL_W = .*; // EVAL_W$", re.MULTILINE)
+
+
+def engine_with_weights(src: str) -> str:
+    """gem_engine.js の学んだ重みの行を models/eval_champion.npy の値にする（AI はいつもチャンピオンの評価）。"""
+    import numpy as np
+
+    w = np.load(WEIGHTS)
+    line = "  const EVAL_W = " + json.dumps(w.tolist()) + "; // EVAL_W"
+    if len(EVAL_W_LINE.findall(src)) != 1:
+        raise SystemExit(
+            "web/gem_engine.js に学んだ重みの行（const EVAL_W = …; // EVAL_W）が1つだけあるはず"
+        )
+    return EVAL_W_LINE.sub(lambda _: line, src)
+
+
 def fill(template: str, values: dict[str, str]) -> str:
     def rep(m: re.Match) -> str:
         if m.group(1) not in values:
@@ -78,6 +95,7 @@ def _build() -> tuple[dict[str, str], set[str]]:
         return key
 
     ja = {name: (WEB / name).read_text(encoding="utf-8") for name in FILES}
+    ja["gem_engine.js"] = engine_with_weights(ja["gem_engine.js"])
     stats = json.loads((ROOT / "data" / "stats.json").read_text(encoding="utf-8"))
     puzzles = json.loads((ROOT / "data" / "endgame_puzzles.json").read_text(encoding="utf-8"))
     hard = sum(not p["greedy_correct"] for p in puzzles)
@@ -177,6 +195,16 @@ def main() -> None:
     ap.add_argument("--check", action="store_true")
     args = ap.parse_args()
     out = built()
+    engine = WEB / "gem_engine.js"
+    engine_old = engine.read_text(encoding="utf-8")
+    engine_new = engine_with_weights(engine_old)
+    if args.check and engine_new != engine_old:
+        sys.exit(
+            "web/gem_engine.js の学んだ重みが models/eval_champion.npy と違う（py scripts/build_pages.py で写す）"
+        )
+    if engine_new != engine_old:
+        engine.write_text(engine_new, encoding="utf-8", newline="\n")
+        print("書いた: web/gem_engine.js（学んだ重み）")
     stale = [
         n
         for n, text in out.items()

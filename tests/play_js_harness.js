@@ -32,13 +32,15 @@ if (input.cmd === "cards") {
     for (const k of g.picks) {
       const legal = E.legalActions(s);
       const reduced = E.reduceActions(legal);
-      steps.push({ legal: legal.map(act), reduced: reduced.map(act), eval: [E.evaluate(s, 0), E.evaluate(s, 1)] });
+      steps.push({ legal: legal.map(act), reduced: reduced.map(act), eval: [E.evaluate(s, 0), E.evaluate(s, 1)], hand: [E.evaluateHand(s, 0), E.evaluateHand(s, 1)], handW: [E.evaluate(s, 0, E.HAND_W), E.evaluate(s, 1, E.HAND_W)] });
       if (k >= legal.length) break; // 合法手が食い違った（Python 側の比較で分かる）
       E.apply(s, legal[k]);
       steps[steps.length - 1].after = JSON.parse(JSON.stringify(snap(s)));
     }
     return { steps, result: E.result(s) };
   });
+} else if (input.cmd === "weights") {
+  out = E.EVAL_W;
 } else if (input.cmd === "match") {
   // JS の AI 同士を先後入れ替えで対局させる（強さの確かめ）
   const res = [];
@@ -49,7 +51,7 @@ if (input.cmd === "cards") {
       let k = 0;
       while (!s.done) {
         const who = names[E.current(s)];
-        const a = E.aiAct(s, who, seed * 1000 + k++).best;
+        const a = (input.weights && input.weights[who] ? E.mctsSearch(s, input.weights[who].iterations, E.makeRng(seed * 1000 + k++), { evalW: input.weights[who].w === "hand" ? E.HAND_W : E.EVAL_W }) : E.aiAct(s, who, seed * 1000 + k++)).best;
         E.apply(s, a);
       }
       const r = E.result(s);
